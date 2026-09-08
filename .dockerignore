@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/node_modules/
+.venv/
+.pytest_cache/
+*.user
