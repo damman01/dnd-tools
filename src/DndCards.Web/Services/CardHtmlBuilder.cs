@@ -19,9 +19,10 @@ public class CardHtmlBuilder
         <title>{{Html(deck.Title)}}</title>
         <style>
         @page { size: {{page.Width}} {{page.Height}}; margin: {{page.Margin}}; }
+        html, body { height: 100%; }
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         *, *::before, *::after { box-sizing: border-box; }
-        .card { width: 100%; height: 100%; border-radius: 8px; position: relative; overflow: hidden; page-break-after: always; }
+        .card { width: 100%; min-height: 100%; border-radius: 8px; position: relative; page-break-after: always; }
         .red { background-color: #fffafa; border: 2px solid #8b0000; }
         .blue { background-color: #f8fbff; border: 2px solid #003399; }
         .green { background-color: #f6fff6; border: 2px solid #006400; }
@@ -31,7 +32,7 @@ public class CardHtmlBuilder
         .blue .header { background-color: #0044cc; border-bottom: 2px solid #003399; }
         .green .header { background-color: #008000; border-bottom: 2px solid #006400; }
         .gold .header { background-color: #daa520; border-bottom: 2px solid #b8860b; }
-        .content { padding: 6px; color: #222; display: flex; flex-direction: column; height: calc(100% - 30px); }
+        .content { padding: 6px; color: #222; }
         .stat-row { margin-bottom: 4px; font-size: 8pt; line-height: 1.2; }
         .stat-label { font-weight: bold; text-transform: uppercase; font-size: 7pt; color: #555; display: inline-block; width: 23mm; }
         .effect { background: #fff; border-radius: 4px; padding: 6px; margin-top: 4px; margin-bottom: 6px; font-size: 8pt; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
@@ -41,12 +42,13 @@ public class CardHtmlBuilder
         .gold .effect { border-left: 4px solid #daa520; }
         .fluff { background: rgba(0,0,0,0.03); padding: 6px; border-radius: 4px; font-family: 'Times New Roman', serif; font-size: 8pt; text-align: center; font-style: italic; color: #333; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 6px; }
         .tactic-title { font-size: 7.5pt; font-weight: bold; color: #444; margin-bottom: 2px; text-transform: uppercase; }
-        .tactic { font-size: 8pt; color: #333; line-height: 1.2; flex-grow: 1; }
+        .tactic { font-size: 8pt; color: #333; line-height: 1.2; }
         .tracker-container { display: flex; align-items: center; margin-top: 2px; }
         .tracker-label { font-size: 7.5pt; font-weight: bold; margin-right: 6px; color: #555; }
         .circle { display: inline-block; width: 10px; height: 10px; border: 1px solid #555; border-radius: 50%; background-color: white; margin-right: 3px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
-        .tracker-row { margin-bottom: 8px; background: #fff; padding: 6px; border-radius: 4px; border-left: 4px solid #daa520; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .tracker-row .tracker-label { display: block; margin-bottom: 4px; font-size: 8pt; color: #222; }
+        .tracker-row { display: flex; flex-direction: column; margin-bottom: 8px; background: #fff; padding: 6px; border-radius: 4px; border-left: 4px solid #daa520; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .tracker-row .tracker-label { margin-bottom: 4px; font-size: 8pt; color: #222; }
+        .circle-row { display: flex; align-items: center; }
         </style>
         </head>
         <body>
@@ -100,7 +102,7 @@ public class CardHtmlBuilder
             foreach (var row in rows)
             {
                 var circles = string.Concat(Enumerable.Repeat("<div class=\"circle\"></div>", row.Count));
-                sb.Append($"""<div class="tracker-row"><span class="tracker-label">{Html(row.Label)}</span>{circles}</div>""");
+                sb.Append($"""<div class="tracker-row"><span class="tracker-label">{Html(row.Label)}</span><div class="circle-row">{circles}</div></div>""");
             }
         }
 
