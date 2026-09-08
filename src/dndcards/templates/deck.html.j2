@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{{ deck.title }}</title>
+<style>
+{{ styles }}
+</style>
+</head>
+<body>
+{%- for card in deck.cards %}
+<div class="card {{ card.type }}">
+    <div class="header">{{ card.name }}</div>
+    <div class="content">
+        {%- if card.cost %}
+        <div class="stat-row"><span class="stat-label">Kosten:</span> {{ card.cost }}</div>
+        {%- endif %}
+        {%- if card.range_ %}
+        <div class="stat-row"><span class="stat-label">Reichweite:</span> {{ card.range_ }}</div>
+        {%- endif %}
+        {%- if card.tracker and card.tracker.count %}
+        <div class="tracker-container">
+            <span class="tracker-label">{{ card.tracker.label }}</span>
+            {%- for _ in range(card.tracker.count) %}<div class="circle"></div>{% endfor %}
+        </div>
+        {%- endif %}
+        {%- if card.effect %}
+        <div class="effect">{{ card.effect }}</div>
+        {%- endif %}
+        {%- if card.fluff %}
+        <div class="fluff">&bdquo;{{ card.fluff }}&ldquo;</div>
+        {%- endif %}
+        {%- for row in card.tracker_rows %}
+        <div class="tracker-row">
+            <span class="tracker-label">{{ row.label }}</span>
+            {%- for _ in range(row.count) %}<div class="circle"></div>{% endfor %}
+        </div>
+        {%- endfor %}
+        {%- if card.tactic %}
+        <div class="tactic-title">Wann man es nutzt:</div>
+        <div class="tactic">{{ card.tactic }}</div>
+        {%- endif %}
+    </div>
+</div>
+{%- endfor %}
+</body>
+</html>

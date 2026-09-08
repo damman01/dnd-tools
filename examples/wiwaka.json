@@ -1,0 +1,73 @@
+{
+  "title": "Wiwaka_Anfaenger_Lernkarten",
+  "page": { "width": "70mm", "height": "120mm", "margin": "4mm" },
+  "cards": [
+    {
+      "name": "Sternenform: Schütze",
+      "type": "red",
+      "cost": "Bonusaktion",
+      "range": "18 Meter",
+      "effect": "Du schießt einen leuchtenden Pfeil ab. Würfle den W20 (+7). Bei einem Treffer machst du 1W8 + 4 gleißenden Schaden.",
+      "fluff": "Meine Sternenkarte beginnt hell zu leuchten, und die Sternbilder formen einen schimmernden Bogen in meinen Pfoten.",
+      "tactic": "Perfekt, um jede Runde zusätzlich Schaden auszuteilen, nachdem du bereits angegriffen oder einen Zauber gewirkt hast."
+    },
+    {
+      "name": "Leitendes Geschoss",
+      "type": "red",
+      "cost": "Aktion",
+      "range": "36 Meter",
+      "effect": "Wirf den W20 (+7). Trifft der Blitz, machst du 4W6 Schaden. Der nächste Angriff gegen dieses Ziel hat zudem Vorteil!",
+      "fluff": "Ein greller Sternenblitz schießt aus meiner Karte und heftet sich flirrend an den Körper meines Feindes.",
+      "tactic": "Super gegen dicke Bosse! Danach direkt deine Sternenform-Bonusaktion für einen garantierten Treffer nutzen.",
+      "tracker": { "label": "Gratis / Tag:", "count": 4 }
+    },
+    {
+      "name": "Hasensprung",
+      "type": "blue",
+      "cost": "Bonusaktion",
+      "range": "4,5 Meter (Sprung)",
+      "effect": "Du springst blitzschnell 4,5 Meter in eine beliebige Richtung. Dabei provozierst du KEINE Gelegenheitsangriffe!",
+      "fluff": "Bevor der Feind zuschlagen kann, spanne ich meine kräftigen Hasenbeine an und bin schon außer Reichweite.",
+      "tactic": "Die perfekte Flucht, wenn ein Oger oder Ork direkt vor dir steht und du unbeschadet wegkommen musst.",
+      "tracker": { "label": "Pro Tag:", "count": 3 }
+    },
+    {
+      "name": "Glückliche Pfoten",
+      "type": "blue",
+      "cost": "Reaktion",
+      "range": "Du selbst",
+      "effect": "Wenn du einen Geschicklichkeits-Rettungswurf knapp nicht schaffst, würfelst du 1W4 und rechnest ihn einfach dazu.",
+      "fluff": "Meine geschärften Instinkte kicken im allerletzten Moment rein – ich ducke mich knapp unter dem tödlichen Schlag hindurch!",
+      "tactic": "Dein Lebensretter! Nutze es, um Feuerbällen, Drachenodem oder versteckten Fallen gerade noch auszuweichen."
+    },
+    {
+      "name": "Heilendes Wort",
+      "type": "green",
+      "cost": "Bonusaktion",
+      "range": "18 Meter",
+      "effect": "Ein Verbündeter heilt 1W4 + 4 Trefferpunkte.",
+      "fluff": "Ich rufe die tröstende Kraft der Sterne an. Eine sanfte, leuchtende Brise umhüllt und heilt meine Freunde.",
+      "tactic": "Rette Nibu oder Oden, wenn sie auf 0 Leben fallen, während du sicher auf Distanz bleibst. Kostet Zauberplätze!"
+    },
+    {
+      "name": "Dornenpeitsche",
+      "type": "red",
+      "cost": "Aktion",
+      "range": "9 Meter",
+      "effect": "Nahkampfangriff auf Distanz! Würfle W20 (+7). Macht 1W6 Stichschaden und zieht das Ziel 3 Meter zu dir heran.",
+      "fluff": "Aus meiner Pfote schießt eine magische Ranke, wickelt sich brutal um den Feind und reißt ihn von den Beinen.",
+      "tactic": "Zieh Gegner von verletzten Verbündeten weg oder zerre sie in Umweltgefahren hinein. (Unendlich oft nutzbar)"
+    },
+    {
+      "name": "Ressourcen & Zauber",
+      "type": "gold",
+      "fluff": "Die Sterne leiten mich, doch auch meine Kraft hat ihre Grenzen. Ein kurzer Moment der Rast gibt mir neue Energie.",
+      "tracker_rows": [
+        { "label": "Zauberplätze Grad 1 (Täglich)", "count": 4 },
+        { "label": "Zauberplätze Grad 2 (Täglich)", "count": 3 },
+        { "label": "Zauberplätze Grad 3 (Täglich)", "count": 2 },
+        { "label": "Sternenform / Tiergestalt (Pro Rast)", "count": 2 }
+      ]
+    }
+  ]
+}
