@@ -22,7 +22,7 @@ public class CardHtmlBuilder
         html, body { height: 100%; }
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         *, *::before, *::after { box-sizing: border-box; }
-        .card { width: 100%; min-height: 100%; border-radius: 8px; position: relative; page-break-after: always; }
+        .card { width: 100%; min-height: 100%; border-radius: 8px; position: relative; overflow: hidden; page-break-after: always; }
         .red { background-color: #fffafa; border: 2px solid #8b0000; }
         .blue { background-color: #f8fbff; border: 2px solid #003399; }
         .green { background-color: #f6fff6; border: 2px solid #006400; }
