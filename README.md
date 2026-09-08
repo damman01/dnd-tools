@@ -95,7 +95,11 @@ Only fields that are present end up on the printed card.
   `https://character-service.dndbeyond.com/character/v5/character/{id}` (the
   unofficial character-service v5 shape) via the "D&D Beyond Charakter
   importieren" upload. `DndBeyondImportService` maps spells and actions from
-  that response to cards; field names were verified against a real export.
+  that response to cards, plus a trailing "Ressourcen & Zauber" gold card with
+  the character's total spell slots per level (from each class's
+  `spellRules.levelSpellSlots` table - exact for single-class characters,
+  a best-effort sum for multiclass casters); field names were verified
+  against a real export.
   The app never calls this API itself — it is undocumented/unofficial and
   could change or break at any time, so fetching it server-side was
   deliberately not implemented. Users who want this can retrieve the JSON
