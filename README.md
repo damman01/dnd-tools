@@ -113,10 +113,23 @@ Only fields that are present end up on the printed card.
 
 ## Monetization
 
-`UsageLimitService` contains a free-tier scaffold (max cards per deck, max PDF
-generations per day, configurable under `Monetization` in `appsettings.json`)
-with an `IsPremium()` extension point. Wiring this up to a real payment
-provider (e.g. Stripe) is intentionally deferred — see open issues.
+`UsageLimitService` contains a free-tier scaffold (max cards per deck, max PDF/PNG
+generations per day) with an `IsPremium()` extension point. Wiring this up to a
+real payment provider (e.g. Stripe) is intentionally deferred — see open issues.
+
+The two limits are exposed as Aspire parameters (`monetization-free-card-limit`,
+`monetization-free-generations-per-day`, defaults 8 and 5) in
+[DndTools.AppHost/AppHost.cs](DndTools.AppHost/AppHost.cs), passed to the `web`
+resource as `Monetization__FreeCardLimitPerDeck` / `Monetization__FreeGenerationsPerDay`
+environment variables. Override them without touching code, e.g. via the
+AppHost's user secrets:
+
+```powershell
+dotnet user-secrets set "Parameters:monetization-free-card-limit" 20 --project DndTools.AppHost
+```
+
+Running `DndCards.Web` outside Aspire (e.g. plain `docker run`) falls back to
+the defaults in its own `appsettings.json` under `Monetization`.
 
 ## Container hosting
 
