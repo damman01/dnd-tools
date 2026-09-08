@@ -27,6 +27,12 @@ public class DndBeyondImportService
         deck.Cards.AddRange(ImportSpells(data));
         deck.Cards.AddRange(ImportActions(data, proficiencyBonus));
 
+        var resourceCard = BuildSpellSlotResourceCard(data);
+        if (resourceCard is not null)
+        {
+            deck.Cards.Add(resourceCard);
+        }
+
         return deck;
     }
 
@@ -100,6 +106,58 @@ public class DndBeyondImportService
                 }
             }
         }
+    }
+
+    // Spell slot totals come from each class's level-indexed table (classes[].definition.spellRules.levelSpellSlots),
+    // not from the "spellSlots" field (which only tracks manual overrides/usage, not the computed total).
+    // Multiclass slot pooling uses the official multiclass-caster-level formula, not a plain per-class sum - this
+    // is a best-effort approximation (summing each class's own row) that is exact for single-class characters.
+    private static CardModel? BuildSpellSlotResourceCard(JsonNode data)
+    {
+        if (data["classes"] is not JsonArray classes)
+        {
+            return null;
+        }
+
+        var totalsBySpellLevel = new int[10];
+        foreach (var cls in classes)
+        {
+            var level = cls?["level"]?.GetValue<int>() ?? 0;
+            if (level <= 0) continue;
+
+            if (cls?["definition"]?["spellRules"]?["levelSpellSlots"] is not JsonArray table || level >= table.Count)
+            {
+                continue;
+            }
+
+            if (table[level] is not JsonArray row) continue;
+            for (var i = 0; i < row.Count && i < totalsBySpellLevel.Length - 1; i++)
+            {
+                totalsBySpellLevel[i + 1] += row[i]?.GetValue<int>() ?? 0;
+            }
+        }
+
+        var rows = new List<CardTracker>();
+        for (var spellLevel = 1; spellLevel <= 9; spellLevel++)
+        {
+            if (totalsBySpellLevel[spellLevel] > 0)
+            {
+                rows.Add(new CardTracker { Label = $"Zauberpl\u00e4tze Grad {spellLevel} (T\u00e4glich)", Count = totalsBySpellLevel[spellLevel] });
+            }
+        }
+
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+
+        return new CardModel
+        {
+            Name = "Ressourcen & Zauber",
+            Type = CardColor.Gold,
+            Fluff = "Zauberpl\u00e4tze aus dem Charakterbogen importiert.",
+            TrackerRows = rows
+        };
     }
 
     private static IEnumerable<CardModel> ImportActions(JsonNode data, int proficiencyBonus)
