@@ -234,3 +234,7 @@ obj/
 wiwaka.json
 wiwaka_*.pdf
 Karten.pdf
+
+# D&D Beyond character-service exports (character-service.dndbeyond.com/character/v5/character/{id})
+# dropped at the repo root for local testing - filenames are just the numeric character ID.
+/[0-9]*.json
