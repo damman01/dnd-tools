@@ -13,6 +13,7 @@ builder.Services.Configure<UsageLimitOptions>(builder.Configuration.GetSection("
 builder.Services.AddSingleton<UsageLimitService>();
 builder.Services.AddSingleton<CardHtmlBuilder>();
 builder.Services.AddSingleton<PdfCardService>();
+builder.Services.AddSingleton<CardImageService>();
 builder.Services.AddSingleton<DndBeyondImportService>();
 
 var app = builder.Build();

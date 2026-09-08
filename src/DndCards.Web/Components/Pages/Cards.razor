@@ -4,6 +4,8 @@
 @using DndCards.Web.Models
 @using DndCards.Web.Services
 @inject PdfCardService PdfCardService
+@inject CardImageService CardImageService
+@inject CardHtmlBuilder CardHtmlBuilder
 @inject DndBeyondImportService DndBeyondImportService
 @inject UsageLimitService UsageLimitService
 @inject IJSRuntime JS
@@ -43,6 +45,10 @@
     <div>
         <button class="btn btn-outline-secondary btn-sm me-2" @onclick="AddBlankCard">+ Karte hinzufügen</button>
         <button class="btn btn-outline-secondary btn-sm me-2" @onclick="DownloadDeckJson">JSON exportieren</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="DownloadHtml">HTML erstellen</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="GeneratePng" disabled="@_isGenerating">
+            @(_isGenerating ? "Erzeuge…" : "PNG erstellen")
+        </button>
         <button class="btn btn-primary btn-sm" @onclick="GeneratePdf" disabled="@_isGenerating">
             @(_isGenerating ? "Erzeuge PDF…" : "PDF erstellen")
         </button>
@@ -198,18 +204,42 @@
         await JS.InvokeVoidAsync("downloadFileFromBytes", "karten.json", "application/json", Convert.ToBase64String(bytes));
     }
 
-    private async Task GeneratePdf()
+    private async Task DownloadHtml()
     {
-        var maxCards = UsageLimitService.GetMaxCardsForClient(_clientId);
-        if (_deck.Cards.Count > maxCards)
+        var html = CardHtmlBuilder.BuildHtml(_deck);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(html);
+        await JS.InvokeVoidAsync("downloadFileFromBytes", $"{_deck.Title}.html", "text/html", Convert.ToBase64String(bytes));
+        SetStatus("HTML erstellt.", false);
+    }
+
+    private async Task GeneratePng()
+    {
+        if (!TryCheckUsageLimits(out var remaining))
         {
-            SetStatus($"Kostenlose Version ist auf {maxCards} Karten pro Set begrenzt. Bitte Kartenanzahl reduzieren oder Premium freischalten.", true);
             return;
         }
 
-        if (!UsageLimitService.TryConsumeGeneration(_clientId, out var remaining))
+        _isGenerating = true;
+        try
         {
-            SetStatus("Tageslimit für kostenlose PDF-Erstellungen erreicht. Bitte morgen erneut versuchen oder Premium freischalten.", true);
+            var (bytes, fileName, contentType) = await CardImageService.GeneratePngAsync(_deck);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, contentType, Convert.ToBase64String(bytes));
+            SetStatus($"PNG erstellt. Verbleibende kostenlose Erstellungen heute: {remaining}.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"PNG-Erstellung fehlgeschlagen: {ex.Message}", true);
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private async Task GeneratePdf()
+    {
+        if (!TryCheckUsageLimits(out var remaining))
+        {
             return;
         }
 
@@ -228,6 +258,25 @@
         {
             _isGenerating = false;
         }
+    }
+
+    private bool TryCheckUsageLimits(out int remaining)
+    {
+        remaining = 0;
+        var maxCards = UsageLimitService.GetMaxCardsForClient(_clientId);
+        if (_deck.Cards.Count > maxCards)
+        {
+            SetStatus($"Kostenlose Version ist auf {maxCards} Karten pro Set begrenzt. Bitte Kartenanzahl reduzieren oder Premium freischalten.", true);
+            return false;
+        }
+
+        if (!UsageLimitService.TryConsumeGeneration(_clientId, out remaining))
+        {
+            SetStatus("Tageslimit für kostenlose Erstellungen erreicht. Bitte morgen erneut versuchen oder Premium freischalten.", true);
+            return false;
+        }
+
+        return true;
     }
 
     private void SetStatus(string message, bool isError)

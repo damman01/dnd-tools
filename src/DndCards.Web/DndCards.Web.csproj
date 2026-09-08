@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="PDFtoImage" Version="5.4.0" />
     <PackageReference Include="PeachPDF" Version="0.9.17" />
   </ItemGroup>
 

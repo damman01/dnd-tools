@@ -22,12 +22,13 @@ hosted as a small paid service.
 
 Key building blocks inside `DndCards.Web`:
 
-- `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, JSON-serializable.
+- `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, JSON-serializable, plus `CardTextLimits` (per-field character caps so a card's content always fits one printed page).
 - `Services/CardHtmlBuilder.cs` – renders a deck into printable HTML/CSS (only fields that are actually filled in are shown on a card).
 - `Services/PdfCardService.cs` – turns that HTML into a PDF via [PeachPDF](https://peachpdf.net/) (pure .NET, no headless browser or wkhtmltopdf dependency).
+- `Services/CardImageService.cs` – rasterizes the generated PDF to PNG via [PDFtoImage](https://github.com/sungaila/PDFtoImage)/PDFium (single PNG for a one-card deck, a ZIP of PNGs otherwise).
 - `Services/DndBeyondImportService.cs` – maps an uploaded D&D Beyond character JSON export (spells/actions, character-service v5 shape) into cards.
 - `Services/UsageLimitService.cs` – free-tier usage gate scaffold for a future paid tier (not wired to a payment provider yet, see [Monetization](#monetization)).
-- `Components/Pages/Cards.razor` – the `/cards` UI: manual card editor, deck JSON upload/download, PDF export.
+- `Components/Pages/Cards.razor` – the `/cards` UI: manual card editor, deck JSON upload/download, and JSON/HTML/PNG/PDF export.
 
 ## Getting started
 
