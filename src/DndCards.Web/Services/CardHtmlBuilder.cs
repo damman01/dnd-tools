@@ -22,7 +22,9 @@ public class CardHtmlBuilder
         html, body { height: 100%; }
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         *, *::before, *::after { box-sizing: border-box; }
-        .card { width: 100%; min-height: 100%; border-radius: 8px; position: relative; overflow: hidden; page-break-before: always; page-break-after: always; }
+        /* Fixed (not min-) height: combined with the CardTextLimits truncation below,
+           content always fits in one page, so the border is never cut off/fragmented. */
+        .card { width: 100%; height: calc({{page.Height}} - {{page.Margin}} - {{page.Margin}}); border-radius: 8px; position: relative; overflow: hidden; page-break-before: always; page-break-after: always; }
         .red { background-color: #fffafa; border: 2px solid #8b0000; }
         .blue { background-color: #f8fbff; border: 2px solid #003399; }
         .green { background-color: #f6fff6; border: 2px solid #006400; }
@@ -67,34 +69,34 @@ public class CardHtmlBuilder
     {
         var colorClass = card.Type.ToString().ToLowerInvariant();
         var sb = new StringBuilder();
-        sb.Append($"""<div class="card {colorClass}"><div class="header">{Html(card.Name)}</div><div class="content">""");
+        sb.Append($"""<div class="card {colorClass}"><div class="header">{Html(card.Name, CardTextLimits.Name)}</div><div class="content">""");
 
         if (!string.IsNullOrWhiteSpace(card.Cost))
         {
-            sb.Append($"""<div class="stat-row"><span class="stat-label">Kosten:</span> {Html(card.Cost)}</div>""");
+            sb.Append($"""<div class="stat-row"><span class="stat-label">Kosten:</span> {Html(card.Cost, CardTextLimits.Cost)}</div>""");
         }
         if (!string.IsNullOrWhiteSpace(card.Range))
         {
-            sb.Append($"""<div class="stat-row"><span class="stat-label">Reichweite:</span> {Html(card.Range)}</div>""");
+            sb.Append($"""<div class="stat-row"><span class="stat-label">Reichweite:</span> {Html(card.Range, CardTextLimits.Range)}</div>""");
         }
 
         if (card.Tracker is { Count: > 0 } tracker)
         {
             var circles = string.Concat(Enumerable.Repeat("<div class=\"circle\"></div>", tracker.Count));
-            sb.Append($"""<div class="tracker-container"><span class="tracker-label">{Html(tracker.Label)}</span>{circles}</div>""");
+            sb.Append($"""<div class="tracker-container"><span class="tracker-label">{Html(tracker.Label, CardTextLimits.TrackerLabel)}</span>{circles}</div>""");
         }
 
         if (!string.IsNullOrWhiteSpace(card.Effect))
         {
-            sb.Append($"""<div class="effect">{Html(card.Effect)}</div>""");
+            sb.Append($"""<div class="effect">{Html(card.Effect, CardTextLimits.Effect)}</div>""");
         }
         if (!string.IsNullOrWhiteSpace(card.Fluff))
         {
-            sb.Append($"""<div class="fluff">"{Html(card.Fluff)}"</div>""");
+            sb.Append($"""<div class="fluff">"{Html(card.Fluff, CardTextLimits.Fluff)}"</div>""");
         }
         if (!string.IsNullOrWhiteSpace(card.Tactic))
         {
-            sb.Append($"""<div class="tactic-title">Wann man es nutzt:</div><div class="tactic">{Html(card.Tactic)}</div>""");
+            sb.Append($"""<div class="tactic-title">Wann man es nutzt:</div><div class="tactic">{Html(card.Tactic, CardTextLimits.Tactic)}</div>""");
         }
 
         if (card.TrackerRows is { Count: > 0 } rows)
@@ -102,7 +104,7 @@ public class CardHtmlBuilder
             foreach (var row in rows)
             {
                 var circles = string.Concat(Enumerable.Repeat("<div class=\"circle\"></div>", row.Count));
-                sb.Append($"""<div class="tracker-row"><span class="tracker-label">{Html(row.Label)}</span><div class="circle-row">{circles}</div></div>""");
+                sb.Append($"""<div class="tracker-row"><span class="tracker-label">{Html(row.Label, CardTextLimits.TrackerLabel)}</span><div class="circle-row">{circles}</div></div>""");
             }
         }
 
@@ -110,5 +112,13 @@ public class CardHtmlBuilder
         return sb.ToString();
     }
 
-    private static string Html(string? value) => System.Net.WebUtility.HtmlEncode(value ?? "");
+    private static string Html(string? value, int? maxLength = null)
+    {
+        var text = value ?? "";
+        if (maxLength is { } max && text.Length > max)
+        {
+            text = text[..max].TrimEnd() + "…";
+        }
+        return System.Net.WebUtility.HtmlEncode(text);
+    }
 }

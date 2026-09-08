@@ -64,7 +64,7 @@ public class DndBeyondImportService
                 Type = hasDamage ? CardColor.Red : CardColor.Blue,
                 Cost = cost,
                 Range = range,
-                Effect = Truncate(description, 260),
+                Effect = Truncate(description, CardTextLimits.Effect),
                 Fluff = level == 0 ? "Ein Zaubertrick, jederzeit einsetzbar." : $"Zauber des Grades {level}.",
                 Tactic = "Aus dem Charakterbogen importiert – Taktiktext bei Bedarf anpassen."
             };
@@ -136,7 +136,7 @@ public class DndBeyondImportService
                     Type = tracker is not null ? CardColor.Gold : (hasAttack ? CardColor.Red : CardColor.Green),
                     Cost = cost,
                     Range = range,
-                    Effect = Truncate(description, 260),
+                    Effect = Truncate(description, CardTextLimits.Effect),
                     Fluff = "Aus dem Charakterbogen importiert.",
                     Tactic = "Taktiktext bei Bedarf anpassen.",
                     Tracker = tracker

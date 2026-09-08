@@ -2,6 +2,20 @@ using System.Text.Json.Serialization;
 
 namespace DndCards.Web.Models;
 
+// Character caps that keep a card's text within the fixed 70x120mm print area at
+// 8pt. Enforced both in the UI (maxlength) and defensively in CardHtmlBuilder, since
+// hand-authored deck JSON bypasses the UI entirely.
+public static class CardTextLimits
+{
+    public const int Name = 40;
+    public const int Cost = 30;
+    public const int Range = 30;
+    public const int Effect = 220;
+    public const int Fluff = 180;
+    public const int Tactic = 200;
+    public const int TrackerLabel = 40;
+}
+
 public enum CardColor
 {
     Red,
