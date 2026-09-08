@@ -1,0 +1,242 @@
+@page "/cards"
+@rendermode InteractiveServer
+@using System.Text.Json
+@using DndCards.Web.Models
+@using DndCards.Web.Services
+@inject PdfCardService PdfCardService
+@inject DndBeyondImportService DndBeyondImportService
+@inject UsageLimitService UsageLimitService
+@inject IJSRuntime JS
+
+<PageTitle>Kartengenerator</PageTitle>
+
+<h1>D&amp;D Aktions- &amp; Zauberkarten</h1>
+<p class="text-muted">
+    Karten manuell anlegen oder ein Karten-JSON hochladen – anschließend als druckfertiges PDF exportieren.
+    Leere Felder werden auf der Karte automatisch ausgeblendet.
+</p>
+
+@if (!string.IsNullOrEmpty(_statusMessage))
+{
+    <div class="alert @(_statusIsError ? "alert-danger" : "alert-info")">@_statusMessage</div>
+}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 mb-3">
+            <h5>Karten-JSON laden</h5>
+            <InputFile OnChange="OnDeckJsonSelected" accept=".json" />
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 mb-3">
+            <h5>D&amp;D Beyond Charakter importieren</h5>
+            <p class="small text-muted mb-1">Exportierte Charakter-JSON-Datei hochladen (Zauber &amp; Aktionen werden als Karten übernommen).</p>
+            <InputFile OnChange="OnDndBeyondJsonSelected" accept=".json" />
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="mb-0">Kartenliste (@_deck.Cards.Count)</h4>
+    <div>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="AddBlankCard">+ Karte hinzufügen</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="DownloadDeckJson">JSON exportieren</button>
+        <button class="btn btn-primary btn-sm" @onclick="GeneratePdf" disabled="@_isGenerating">
+            @(_isGenerating ? "Erzeuge PDF…" : "PDF erstellen")
+        </button>
+    </div>
+</div>
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Typ</th>
+            <th>Kosten</th>
+            <th>Reichweite</th>
+            <th>Effekt</th>
+            <th>Fluff</th>
+            <th>Taktik</th>
+            <th>Tracker</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (var i = 0; i < _deck.Cards.Count; i++)
+        {
+            var card = _deck.Cards[i];
+            <tr>
+                <td><input class="form-control form-control-sm" @bind="card.Name" /></td>
+                <td>
+                    <select class="form-select form-select-sm" @bind="card.Type">
+                        @foreach (var color in Enum.GetValues<CardColor>())
+                        {
+                            <option value="@color">@color</option>
+                        }
+                    </select>
+                </td>
+                <td><input class="form-control form-control-sm" @bind="card.Cost" /></td>
+                <td><input class="form-control form-control-sm" @bind="card.Range" /></td>
+                <td><textarea class="form-control form-control-sm" rows="2" @bind="card.Effect"></textarea></td>
+                <td><textarea class="form-control form-control-sm" rows="2" @bind="card.Fluff"></textarea></td>
+                <td><textarea class="form-control form-control-sm" rows="2" @bind="card.Tactic"></textarea></td>
+                <td style="width:110px">
+                    <input type="number" min="0" class="form-control form-control-sm mb-1"
+                           @bind:get="card.Tracker?.Count ?? 0" @bind:set="v => SetTrackerCount(card, v)" />
+                    <input class="form-control form-control-sm" placeholder="Label"
+                           @bind:get="card.Tracker?.Label ?? string.Empty" @bind:set="v => SetTrackerLabel(card, v)" />
+                </td>
+                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveCard(card)">✕</button></td>
+            </tr>
+            <tr>
+                <td colspan="9" class="pt-0 pb-3">
+                    <div class="small text-muted mb-1">
+                        Zähler-Zeilen (für Ressourcenkarten mit mehreren Trackern, z.&nbsp;B. Zauberplätze pro Grad):
+                    </div>
+                    @if (card.TrackerRows is { Count: > 0 })
+                    {
+                        @for (var r = 0; r < card.TrackerRows.Count; r++)
+                        {
+                            var row = card.TrackerRows[r];
+                            <div class="d-flex gap-2 mb-1" style="max-width:500px">
+                                <input class="form-control form-control-sm" placeholder="Label" @bind="row.Label" />
+                                <input type="number" min="0" class="form-control form-control-sm" style="width:80px" @bind="row.Count" />
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => card.TrackerRows.Remove(row)">✕</button>
+                            </div>
+                        }
+                    }
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => AddTrackerRow(card)">+ Zähler-Zeile</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private CardDeck _deck = new();
+    private bool _isGenerating;
+    private string? _statusMessage;
+    private bool _statusIsError;
+    private readonly string _clientId = Guid.NewGuid().ToString();
+
+    private void AddBlankCard() => _deck.Cards.Add(new CardModel { Name = "Neue Karte" });
+
+    private void RemoveCard(CardModel card) => _deck.Cards.Remove(card);
+
+    private static void SetTrackerCount(CardModel card, int count)
+    {
+        if (count <= 0 && string.IsNullOrWhiteSpace(card.Tracker?.Label))
+        {
+            card.Tracker = null;
+            return;
+        }
+        card.Tracker ??= new CardTracker();
+        card.Tracker.Count = count;
+    }
+
+    private static void SetTrackerLabel(CardModel card, string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label) && (card.Tracker is null || card.Tracker.Count <= 0))
+        {
+            card.Tracker = null;
+            return;
+        }
+        card.Tracker ??= new CardTracker();
+        card.Tracker.Label = label ?? string.Empty;
+    }
+
+    private static void AddTrackerRow(CardModel card)
+    {
+        card.TrackerRows ??= [];
+        card.TrackerRows.Add(new CardTracker { Label = "Neue Zeile", Count = 1 });
+    }
+
+    private async Task OnDeckJsonSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            var deck = JsonSerializer.Deserialize<CardDeck>(json, JsonOptions);
+            if (deck is not null)
+            {
+                _deck = deck;
+                SetStatus($"{deck.Cards.Count} Karten geladen.", false);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Fehler beim Laden: {ex.Message}", true);
+        }
+    }
+
+    private async Task OnDndBeyondJsonSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            var imported = DndBeyondImportService.Import(json);
+            _deck.Title = imported.Title;
+            _deck.Cards.AddRange(imported.Cards);
+            SetStatus($"{imported.Cards.Count} Karten aus D&D Beyond importiert. Bitte Texte prüfen und anpassen.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Import fehlgeschlagen: {ex.Message}", true);
+        }
+    }
+
+    private async Task DownloadDeckJson()
+    {
+        var json = JsonSerializer.Serialize(_deck, JsonOptions);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        await JS.InvokeVoidAsync("downloadFileFromBytes", "karten.json", "application/json", Convert.ToBase64String(bytes));
+    }
+
+    private async Task GeneratePdf()
+    {
+        var maxCards = UsageLimitService.GetMaxCardsForClient(_clientId);
+        if (_deck.Cards.Count > maxCards)
+        {
+            SetStatus($"Kostenlose Version ist auf {maxCards} Karten pro Set begrenzt. Bitte Kartenanzahl reduzieren oder Premium freischalten.", true);
+            return;
+        }
+
+        if (!UsageLimitService.TryConsumeGeneration(_clientId, out var remaining))
+        {
+            SetStatus("Tageslimit für kostenlose PDF-Erstellungen erreicht. Bitte morgen erneut versuchen oder Premium freischalten.", true);
+            return;
+        }
+
+        _isGenerating = true;
+        try
+        {
+            var bytes = await PdfCardService.GeneratePdfAsync(_deck);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", $"{_deck.Title}.pdf", "application/pdf", Convert.ToBase64String(bytes));
+            SetStatus($"PDF erstellt. Verbleibende kostenlose Erstellungen heute: {remaining}.", false);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"PDF-Erstellung fehlgeschlagen: {ex.Message}", true);
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private void SetStatus(string message, bool isError)
+    {
+        _statusMessage = message;
+        _statusIsError = isError;
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+}
