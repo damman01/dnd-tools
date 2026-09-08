@@ -1,0 +1,44 @@
+{
+  "title": "Example_Starter_Cards",
+  "page": { "width": "70mm", "height": "120mm", "margin": "4mm" },
+  "cards": [
+    {
+      "name": "Fire Bolt",
+      "type": "red",
+      "cost": "Action",
+      "range": "120 feet",
+      "effect": "Ranged spell attack. On a hit, the target takes 2d10 fire damage.",
+      "fluff": "A mote of fire flickers to life between my fingers before I hurl it.",
+      "tactic": "Reliable single-target damage cantrip, usable at will."
+    },
+    {
+      "name": "Shield",
+      "type": "blue",
+      "cost": "Reaction",
+      "range": "Self",
+      "effect": "+5 bonus to AC until the start of your next turn, including against the triggering attack.",
+      "fluff": "An unseen force deflects the incoming blow just in time.",
+      "tactic": "Use when a single big hit would otherwise land.",
+      "tracker": { "label": "Spell slots used:", "count": 3 }
+    },
+    {
+      "name": "Cure Wounds",
+      "type": "green",
+      "cost": "Action",
+      "range": "Touch",
+      "effect": "A creature you touch regains 1d8 + spellcasting modifier hit points.",
+      "fluff": "Warm light flows from my hand into the wound.",
+      "tactic": "Stabilize an ally who dropped low without spending a bonus action."
+    },
+    {
+      "name": "Resources",
+      "type": "gold",
+      "fluff": "Even the mightiest magic needs rest to recover.",
+      "tracker_rows": [
+        { "label": "1st level slots (per long rest)", "count": 4 },
+        { "label": "2nd level slots (per long rest)", "count": 3 },
+        { "label": "Channel Divinity (per short rest)", "count": 1 }
+      ]
+    }
+  ]
+}
