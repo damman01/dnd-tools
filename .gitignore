@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Aspire
+.aspire/
+
+# Personal character sheet exports used for local testing - may contain
+# another person's private character data, keep these out of git history.
+wiwaka.json
+wiwaka_*.pdf
+Karten.pdf
