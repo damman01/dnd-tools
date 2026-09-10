@@ -8,7 +8,7 @@ codebase, commits, issues, and docs are kept in English.
 ## Status
 
 Actively evolving prototype. The original idea started as a Jupyter notebook
-([DnD_Action_and_Spell_Card_Generator.ipynb](DnD_Action_and_Spell_Card_Generator.ipynb))
+([TTRPG_Action_and_Spell_Card_Generator.ipynb](TTRPG_Action_and_Spell_Card_Generator.ipynb))
 and has been modernized into a clean, cloud-native distributed .NET app orchestrated by Aspire.
 
 ## Architecture
