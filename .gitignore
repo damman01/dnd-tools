@@ -231,13 +231,4 @@ obj/
 
 # Personal character sheet exports used for local testing - may contain
 # another person's private character data, keep these out of git history.
-wiwaka.json
-wiwaka_*.pdf
-Karten.pdf
-Karten.html
-Karten.png
-Karten.zip
-
-# D&D Beyond character-service exports (character-service.dndbeyond.com/character/v5/character/{id})
-# dropped at the repo root for local testing - filenames are just the numeric character ID.
-/[0-9]*.json
+/testfiles/*
