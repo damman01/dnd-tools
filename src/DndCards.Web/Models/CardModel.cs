@@ -9,8 +9,10 @@ public static class CardTextLimits
 {
     public const int Name = 40;
     public const int Cost = 30;
-    public const int Range = 30;
-    public const int Effect = 220;
+    public const int Range = 40;
+    public const int EffectStandard = 220;
+    public const int EffectExpanded = 450;
+    public const int Effect = EffectExpanded; // Maximum permitted cap
     public const int Fluff = 180;
     public const int Tactic = 200;
     public const int TrackerLabel = 40;
@@ -45,6 +47,41 @@ public class CardModel
 
     [JsonPropertyName("tracker_rows")]
     public List<CardTracker>? TrackerRows { get; set; }
+
+    [JsonPropertyName("custom_effect_limit")]
+    public int? CustomEffectLimit { get; set; }
+
+    // Calculates the available capacity for the effect text depending on other fields filled
+    [JsonIgnore]
+    public int EffectiveEffectLimit
+    {
+        get
+        {
+            if (CustomEffectLimit.HasValue && CustomEffectLimit.Value > 0)
+            {
+                return CustomEffectLimit.Value;
+            }
+
+            var hasFluff = !string.IsNullOrWhiteSpace(Fluff);
+            var hasTactic = !string.IsNullOrWhiteSpace(Tactic);
+            var hasTrackers = (Tracker is { Count: > 0 }) || (TrackerRows is { Count: > 0 });
+
+            // If there's no fluff, no tactic, and no extra trackers, effect text can use the full card
+            if (!hasFluff && !hasTactic && !hasTrackers)
+            {
+                return CardTextLimits.EffectExpanded; // 450 chars
+            }
+            if (!hasFluff && !hasTactic)
+            {
+                return 360;
+            }
+            if (!hasFluff || !hasTactic)
+            {
+                return 280;
+            }
+            return CardTextLimits.EffectStandard; // 220 chars
+        }
+    }
 }
 
 public class PageSpec

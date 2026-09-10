@@ -33,6 +33,12 @@ public class DndBeyondImportService
             deck.Cards.Add(resourceCard);
         }
 
+        var classResourceCard = BuildClassResourcesCard(data, proficiencyBonus);
+        if (classResourceCard is not null)
+        {
+            deck.Cards.Add(classResourceCard);
+        }
+
         return deck;
     }
 
@@ -72,7 +78,6 @@ public class DndBeyondImportService
                 Range = range,
                 Effect = Truncate(description, CardTextLimits.Effect),
                 Fluff = level == 0 ? "Ein Zaubertrick, jederzeit einsetzbar." : $"Zauber des Grades {level}.",
-                Tactic = "Aus dem Charakterbogen importiert – Taktiktext bei Bedarf anpassen."
             };
         }
     }
@@ -109,9 +114,7 @@ public class DndBeyondImportService
     }
 
     // Spell slot totals come from each class's level-indexed table (classes[].definition.spellRules.levelSpellSlots),
-    // not from the "spellSlots" field (which only tracks manual overrides/usage, not the computed total).
-    // Multiclass slot pooling uses the official multiclass-caster-level formula, not a plain per-class sum - this
-    // is a best-effort approximation (summing each class's own row) that is exact for single-class characters.
+    // only if the class or subclass is an actual spellcaster (canCastSpells == true).
     private static CardModel? BuildSpellSlotResourceCard(JsonNode data)
     {
         if (data["classes"] is not JsonArray classes)
@@ -124,6 +127,10 @@ public class DndBeyondImportService
         {
             var level = cls?["level"]?.GetValue<int>() ?? 0;
             if (level <= 0) continue;
+
+            var canCast = cls?["definition"]?["canCastSpells"]?.GetValue<bool>() == true
+                       || cls?["subclassDefinition"]?["canCastSpells"]?.GetValue<bool>() == true;
+            if (!canCast) continue;
 
             if (cls?["definition"]?["spellRules"]?["levelSpellSlots"] is not JsonArray table || level >= table.Count)
             {
@@ -153,9 +160,66 @@ public class DndBeyondImportService
 
         return new CardModel
         {
-            Name = "Ressourcen & Zauber",
+            Name = "Zauberpl\u00e4tze",
             Type = CardColor.Gold,
-            Fluff = "Zauberpl\u00e4tze aus dem Charakterbogen importiert.",
+            Fluff = "Ressourcen f\u00fcr Zauber",
+            TrackerRows = rows
+        };
+    }
+
+    private static CardModel? BuildClassResourcesCard(JsonNode data, int proficiencyBonus)
+    {
+        if (data["actions"] is not JsonObject actionGroups)
+        {
+            return null;
+        }
+
+        var rows = new List<CardTracker>();
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (_, group) in actionGroups)
+        {
+            if (group is not JsonArray arr) continue;
+
+            foreach (var action in arr)
+            {
+                if (action is null) continue;
+                var rawName = action["name"]?.ToString();
+                if (string.IsNullOrWhiteSpace(rawName)) continue;
+
+                var limitedUse = action["limitedUse"];
+                if (limitedUse is null) continue;
+
+                var maxUses = limitedUse["maxUses"]?.GetValue<int>() ?? 0;
+                if (maxUses <= 0 && limitedUse["useProficiencyBonus"]?.GetValue<bool>() == true)
+                {
+                    maxUses = proficiencyBonus;
+                }
+                if (maxUses <= 0) continue;
+
+                // Clean up suffixes like "(Enter)" in "Rage (Enter)"
+                var cleanName = rawName.Replace(" (Enter)", "").Trim();
+                if (!seenNames.Add(cleanName)) continue;
+
+                var restType = limitedUse["resetType"]?.GetValue<int>() == 1 ? "Kurze Rast" : "Lange Rast";
+                rows.Add(new CardTracker
+                {
+                    Label = $"{cleanName} ({restType}):",
+                    Count = maxUses
+                });
+            }
+        }
+
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+
+        return new CardModel
+        {
+            Name = "Klassenressourcen",
+            Type = CardColor.Gold,
+            Fluff = "T\u00e4gliche F\u00e4higkeiten & Z\u00e4hler",
             TrackerRows = rows
         };
     }
@@ -195,8 +259,6 @@ public class DndBeyondImportService
                     Cost = cost,
                     Range = range,
                     Effect = Truncate(description, CardTextLimits.Effect),
-                    Fluff = "Aus dem Charakterbogen importiert.",
-                    Tactic = "Taktiktext bei Bedarf anpassen.",
                     Tracker = tracker
                 };
             }

@@ -236,11 +236,19 @@
                     </div>
 
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <label class="form-label small text-muted">@I18n.T("edit.effect") (max. @CardTextLimits.Effect)</label>
-                            <span class="small text-muted">@((_selectedCard.Effect?.Length ?? 0))/@CardTextLimits.Effect</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="form-label small text-muted mb-0">@I18n.T("edit.effect") (max. @_selectedCard.EffectiveEffectLimit)</label>
+                                <div class="btn-group btn-group-sm" role="group" title="@I18n.T("edit.effect_size.hint")">
+                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 small @(_selectedCard.CustomEffectLimit is null or <= 0 ? "active bg-secondary text-white" : "")" style="font-size: 0.72rem;" @onclick="() => SetEffectSize(_selectedCard, null)">@I18n.T("edit.effect_size.auto")</button>
+                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 small @(_selectedCard.CustomEffectLimit == CardTextLimits.EffectStandard ? "active bg-secondary text-white" : "")" style="font-size: 0.72rem;" @onclick="() => SetEffectSize(_selectedCard, CardTextLimits.EffectStandard)">@I18n.T("edit.effect_size.standard")</button>
+                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 small @(_selectedCard.CustomEffectLimit == 360 ? "active bg-secondary text-white" : "")" style="font-size: 0.72rem;" @onclick="() => SetEffectSize(_selectedCard, 360)">@I18n.T("edit.effect_size.medium")</button>
+                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 small @(_selectedCard.CustomEffectLimit == CardTextLimits.EffectExpanded ? "active bg-secondary text-white" : "")" style="font-size: 0.72rem;" @onclick="() => SetEffectSize(_selectedCard, CardTextLimits.EffectExpanded)">@I18n.T("edit.effect_size.full")</button>
+                                </div>
+                            </div>
+                            <span class="small text-muted">@((_selectedCard.Effect?.Length ?? 0))/@_selectedCard.EffectiveEffectLimit</span>
                         </div>
-                        <textarea class="form-control" rows="3" maxlength="@CardTextLimits.Effect" @bind="_selectedCard.Effect" @bind:event="oninput" placeholder="@I18n.T("edit.effect_placeholder")"></textarea>
+                        <textarea class="form-control" rows="@(_selectedCard.EffectiveEffectLimit > 300 ? 5 : 3)" maxlength="@_selectedCard.EffectiveEffectLimit" @bind="_selectedCard.Effect" @bind:event="oninput" placeholder="@I18n.T("edit.effect_placeholder")"></textarea>
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -327,7 +335,7 @@
 
                                 @if (!string.IsNullOrWhiteSpace(_selectedCard.Effect))
                                 {
-                                    <div class="preview-effect">@_selectedCard.Effect</div>
+                                    <div class="preview-effect @(_selectedCard.EffectiveEffectLimit > 300 ? "expanded" : "")">@_selectedCard.Effect</div>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(_selectedCard.Fluff))
                                 {
@@ -447,6 +455,12 @@
     {
         if (card is null) return;
         card.Range = rangeValue;
+    }
+
+    private static void SetEffectSize(CardModel? card, int? limit)
+    {
+        if (card is null) return;
+        card.CustomEffectLimit = limit;
     }
 
     public void Dispose()

@@ -77,11 +77,12 @@ or exported back out for reuse. See
       "type": "red",            // required: red | blue | green | gold
       "cost": "Action",         // optional
       "range": "120 feet",      // optional
-      "effect": "...",          // optional
-      "fluff": "...",           // optional, shown in italics
-      "tactic": "...",          // optional
+      "effect": "...",          // optional (max. 220 standard, or up to 450 if fluff/tactic omitted)
+      "fluff": "...",           // optional, shown in italics (max. 180)
+      "tactic": "...",          // optional (max. 200)
       "tracker": { "label": "Uses:", "count": 3 },       // optional, single tracker row
-      "tracker_rows": [ { "label": "...", "count": 4 } ] // optional, multi-row resource card
+      "tracker_rows": [ { "label": "...", "count": 4 } ], // optional, multi-row resource card
+      "custom_effect_limit": 450                         // optional: override effect size limit (220, 360, 450)
     }
   ]
 }

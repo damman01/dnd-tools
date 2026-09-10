@@ -37,7 +37,8 @@ public class CardHtmlBuilder
         .content { padding: 6px; color: #222; }
         .stat-row { margin-bottom: 4px; font-size: 8pt; line-height: 1.2; }
         .stat-label { font-weight: bold; text-transform: uppercase; font-size: 7pt; color: #555; display: inline-block; width: 23mm; }
-        .effect { background: #fff; border-radius: 4px; padding: 6px; margin-top: 4px; margin-bottom: 6px; font-size: 8pt; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .effect { background: #fff; border-radius: 4px; padding: 6px; margin-top: 4px; margin-bottom: 6px; font-size: 8pt; font-weight: 500; line-height: 1.35; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .effect.expanded { font-size: 7.8pt; line-height: 1.3; min-height: 65mm; }
         .red .effect { border-left: 4px solid #b30000; }
         .blue .effect { border-left: 4px solid #0044cc; }
         .green .effect { border-left: 4px solid #008000; }
@@ -88,7 +89,9 @@ public class CardHtmlBuilder
 
         if (!string.IsNullOrWhiteSpace(card.Effect))
         {
-            sb.Append($"""<div class="effect">{Html(card.Effect, CardTextLimits.Effect)}</div>""");
+            var isExpanded = card.EffectiveEffectLimit > 300;
+            var effectClass = isExpanded ? "effect expanded" : "effect";
+            sb.Append($"""<div class="{effectClass}">{Html(card.Effect, card.EffectiveEffectLimit)}</div>""");
         }
         if (!string.IsNullOrWhiteSpace(card.Fluff))
         {

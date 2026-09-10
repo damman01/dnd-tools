@@ -209,6 +209,11 @@ a:hover {
     font-weight: 600;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
+.preview-card-frame .preview-effect.expanded {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    min-height: 200px;
+}
 .preview-card-frame.red .preview-effect { border-left: 3px solid #b30000; }
 .preview-card-frame.blue .preview-effect { border-left: 3px solid #0044cc; }
 .preview-card-frame.green .preview-effect { border-left: 3px solid #008000; }
