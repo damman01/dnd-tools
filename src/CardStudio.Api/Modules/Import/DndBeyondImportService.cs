@@ -21,6 +21,14 @@ public class DndBeyondImportService
         deck.Cards.AddRange(ImportSpells(data, unitSystem));
         deck.Cards.AddRange(ImportActions(data, proficiencyBonus, unitSystem));
 
+        var backgroundCard = BuildBackgroundCard(data);
+        if (backgroundCard is not null)
+        {
+            deck.Cards.Add(backgroundCard);
+        }
+
+        deck.Cards.AddRange(ImportCreatures(data, unitSystem));
+
         var resourceCard = BuildSpellSlotResourceCard(data);
         if (resourceCard is not null)
         {
@@ -346,6 +354,143 @@ public class DndBeyondImportService
             UnitSystem.Imperial => $"{feet} ft",
             _ => $"{mStr} ({feet} ft)"
         };
+    }
+
+    private static CardModel? BuildBackgroundCard(JsonNode data)
+    {
+        var bg = data["background"];
+        var bgDef = bg?["definition"];
+        if (bgDef is null) return null;
+
+        var bgName = bgDef["name"]?.ToString() ?? "Hintergrund";
+        var featureName = bgDef["featureName"]?.ToString();
+        var featureDesc = StripHtml(bgDef["featureDescription"]?.ToString() ?? bgDef["description"]?.ToString() ?? "");
+
+        var effectText = !string.IsNullOrWhiteSpace(featureName)
+            ? $"Merkmal '{featureName}': {featureDesc}"
+            : featureDesc;
+
+        var traits = data["traits"];
+        var personality = traits?["personalityTraits"]?.ToString();
+        var flaw = traits?["flaws"]?.ToString();
+        var fluff = personality switch
+        {
+            not null when flaw is not null => $"{personality} {flaw}",
+            not null => personality,
+            _ => flaw ?? $"Hintergrund: {bgName}"
+        };
+
+        return new CardModel
+        {
+            Name = $"Hintergrund: {bgName}",
+            Type = CardColor.Gold,
+            Cost = "Passiv",
+            Range = "Selbst",
+            Effect = Truncate(effectText, 450),
+            Fluff = Truncate(fluff, 250),
+            CustomEffectLimit = 450
+        };
+    }
+
+    private static IEnumerable<CardModel> ImportCreatures(JsonNode data, UnitSystem unitSystem)
+    {
+        if (data["creatures"] is not JsonArray creatures || creatures.Count == 0)
+        {
+            yield break;
+        }
+
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var creature in creatures)
+        {
+            if (creature is null) continue;
+
+            var def = creature["definition"];
+            if (def is null) continue;
+
+            var name = creature["name"]?.ToString();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = def["name"]?.ToString();
+            }
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            if (!seenNames.Add(name)) continue;
+
+            var ac = def["armorClass"]?.GetValue<int>() ?? 10;
+            var hp = def["averageHitPoints"]?.GetValue<int>() ?? 1;
+
+            var speedParts = new List<string>();
+            if (def["movements"] is JsonArray movements)
+            {
+                foreach (var mov in movements)
+                {
+                    var speed = mov?["speed"]?.GetValue<int>() ?? 0;
+                    var movId = mov?["movementId"]?.GetValue<int>();
+                    var typeStr = movId switch
+                    {
+                        1 => "Gehen",
+                        2 => "Graben",
+                        3 => "Klettern",
+                        4 => "Fliegen",
+                        5 => "Schwimmen",
+                        _ => null
+                    };
+
+                    if (speed > 0)
+                    {
+                        var formatted = FormatDistance($"{speed} ft", unitSystem) ?? $"{speed} ft";
+                        speedParts.Add(typeStr is not null ? $"{typeStr} {formatted}" : formatted);
+                    }
+                }
+            }
+            var speedStr = speedParts.Count > 0 ? string.Join(", ", speedParts) : "9 m";
+
+            var crId = def["challengeRatingId"]?.GetValue<int>() ?? 0;
+            var crStr = crId switch
+            {
+                1 => "0",
+                2 => "1/8",
+                3 => "1/4",
+                4 => "1/2",
+                5 => "1",
+                6 => "2",
+                7 => "3",
+                _ => $"{crId}"
+            };
+
+            var actionsDesc = StripHtml(def["actionsDescription"]?.ToString() ?? "");
+            var traitsDesc = StripHtml(def["specialTraitsDescription"]?.ToString() ?? "");
+
+            var statsSummary = $"RK: {ac} | TP: {hp} | Tempo: {speedStr} | HG: {crStr}";
+            var combinedEffect = $"{statsSummary}\n";
+            if (!string.IsNullOrWhiteSpace(traitsDesc))
+            {
+                combinedEffect += $"{traitsDesc}\n";
+            }
+            if (!string.IsNullOrWhiteSpace(actionsDesc))
+            {
+                combinedEffect += $"{actionsDesc}";
+            }
+
+            var groupId = creature["groupId"]?.GetValue<int>() ?? 0;
+            var categoryPrefix = groupId switch
+            {
+                4 => "Reittier",
+                13 => "Tiergestalt",
+                _ => "Begleiter"
+            };
+
+            yield return new CardModel
+            {
+                Name = $"{categoryPrefix}: {name}",
+                Type = CardColor.Blue,
+                Cost = "Aktion",
+                Range = "Selbst",
+                Effect = Truncate(combinedEffect.Trim(), 450),
+                Fluff = $"{name} (Herausforderungsgrad {crStr})",
+                CustomEffectLimit = 450
+            };
+        }
     }
 
     private static string StripHtml(string html)
