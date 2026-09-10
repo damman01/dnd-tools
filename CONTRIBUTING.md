@@ -11,7 +11,7 @@ Run the app via `aspire start` (never `dotnet run` directly on the AppHost),
 then `aspire wait web`. Build the whole solution with:
 
 ```powershell
-dotnet build DndTools.slnx
+dotnet build CardStudio.slnx
 ```
 
 ## Commit messages
@@ -32,7 +32,7 @@ Keep commits small and focused on one logical change.
 
 1. Fork the repo and create a feature branch off `main`.
 2. Make your change, including tests/build verification where applicable.
-3. Ensure `dotnet build DndTools.slnx` succeeds without new warnings.
+3. Ensure `dotnet build CardStudio.slnx` succeeds without new warnings.
 4. Open a PR describing the change and, for UI changes, include a screenshot.
 
 ## Reporting issues

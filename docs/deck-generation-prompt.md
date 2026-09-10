@@ -2,7 +2,7 @@
 
 This is the prompt template used to turn a character sheet (pasted as text,
 e.g. from a PDF export) into a [deck JSON](../README.md#card-deck-json-format)
-that `DndCards.Web` can render into a PDF. Paste it into any capable chat
+that `CardStudio.Web` can render into a PDF. Paste it into any capable chat
 model together with the character sheet text.
 
 The prompt itself is kept in German because it is tuned to produce
