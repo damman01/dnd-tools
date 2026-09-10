@@ -8,6 +8,7 @@
 @inject CardHtmlBuilder CardHtmlBuilder
 @inject DndBeyondImportService DndBeyondImportService
 @inject UsageLimitService UsageLimitService
+@inject CardDeckStateService DeckState
 @inject IJSRuntime JS
 
 <PageTitle>Kartengenerator | TTRPG Card Studio</PageTitle>
@@ -349,8 +350,12 @@
 </div>
 
 @code {
-    private CardDeck _deck = new();
-    private CardModel? _selectedCard;
+    private CardDeck _deck => DeckState.Deck;
+    private CardModel? _selectedCard
+    {
+        get => DeckState.SelectedCard;
+        set => DeckState.SelectedCard = value;
+    }
     private bool _isGenerating;
     private string? _statusMessage;
     private bool _statusIsError;
@@ -358,21 +363,9 @@
 
     protected override void OnInitialized()
     {
-        if (_deck.Cards.Count == 0)
+        if (_selectedCard is null && _deck.Cards.Count > 0)
         {
-            var demoCard = new CardModel
-            {
-                Name = "Feuerball",
-                Type = CardColor.Red,
-                Cost = "1 Aktion",
-                Range = "150 Fuß (20-Fuß Kugel)",
-                Effect = "Jede Kreatur im Radius erleidet 8d6 Feuerschaden (Geschicklichkeitswurf halbiert). Entzündet brennbare Gegenstände.",
-                Fluff = "Ein heller Funke schießt aus deinen Fingerspitzen hervor und detoniert im lodernden Inferno.",
-                Tactic = "Gegen Gruppen eng stehender Feinde auf Distanz einsetzen.",
-                Tracker = new CardTracker { Label = "Zauberplatz Grad 3:", Count = 3 }
-            };
-            _deck.Cards.Add(demoCard);
-            _selectedCard = demoCard;
+            _selectedCard = _deck.Cards.FirstOrDefault();
         }
     }
 
@@ -465,8 +458,8 @@
             var deck = JsonSerializer.Deserialize<CardDeck>(json, JsonOptions);
             if (deck is not null)
             {
-                _deck = deck;
-                _selectedCard = _deck.Cards.FirstOrDefault();
+                DeckState.Deck = deck;
+                _selectedCard = DeckState.Deck.Cards.FirstOrDefault();
                 SetStatus($"{deck.Cards.Count} Karten geladen.", false);
             }
         }

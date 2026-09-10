@@ -15,6 +15,7 @@ builder.Services.AddSingleton<CardHtmlBuilder>();
 builder.Services.AddSingleton<PdfCardService>();
 builder.Services.AddSingleton<CardImageService>();
 builder.Services.AddSingleton<DndBeyondImportService>();
+builder.Services.AddScoped<CardDeckStateService>();
 
 var app = builder.Build();
 
