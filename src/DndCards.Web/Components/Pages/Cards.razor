@@ -10,126 +10,422 @@
 @inject UsageLimitService UsageLimitService
 @inject IJSRuntime JS
 
-<PageTitle>Kartengenerator</PageTitle>
+<PageTitle>Kartengenerator | TTRPG Card Studio</PageTitle>
 
-<h1>D&amp;D Aktions- &amp; Zauberkarten</h1>
-<p class="text-muted">
-    Karten manuell anlegen oder ein Karten-JSON hochladen – anschließend als druckfertiges PDF exportieren.
-    Leere Felder werden auf der Karte automatisch ausgeblendet. Texte sind pro Feld begrenzt
-    (z.&nbsp;B. Effekt max. @CardTextLimits.Effect Zeichen), damit jede Karte garantiert auf eine Seite passt.
-</p>
-
-@if (!string.IsNullOrEmpty(_statusMessage))
-{
-    <div class="alert @(_statusIsError ? "alert-danger" : "alert-info")">@_statusMessage</div>
-}
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card p-3 mb-3">
-            <h5>Karten-JSON laden</h5>
-            <InputFile OnChange="OnDeckJsonSelected" accept=".json" />
+<div class="container-fluid px-0">
+    <!-- Header & Action Ribbon -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary">
+        <div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <span class="text-amber">🃏</span>
+                <span>TTRPG Kartengenerator</span>
+            </h2>
+            <p class="text-muted small mb-0">
+                5e-kompatible Aktions-, Zauber- &amp; Referenzkarten gestalten. Texte passen garantiert auf 70&times;120mm Karten.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" @onclick="AddBlankCard">
+                <span>➕</span> <span>Karte hinzufügen</span>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="DownloadDeckJson">
+                <span>💾</span> JSON sichern
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="DownloadHtml">
+                <span>🌐</span> HTML Export
+            </button>
+            <button class="btn btn-outline-warning btn-sm" @onclick="GeneratePng" disabled="@_isGenerating">
+                <span>🖼️</span> @(_isGenerating ? "Erzeuge…" : "PNG erstellen")
+            </button>
+            <button class="btn btn-warning btn-sm fw-semibold shadow-sm" @onclick="GeneratePdf" disabled="@_isGenerating">
+                <span>📄</span> @(_isGenerating ? "Erzeuge PDF…" : "PDF exportieren")
+            </button>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card p-3 mb-3">
-            <h5>D&amp;D Beyond Charakter importieren</h5>
-            <p class="small text-muted mb-1">Exportierte Charakter-JSON-Datei hochladen (Zauber &amp; Aktionen werden als Karten übernommen).</p>
-            <InputFile OnChange="OnDndBeyondJsonSelected" accept=".json" />
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="alert @(_statusIsError ? "alert-danger" : "alert-info") alert-dismissible fade show d-flex align-items-center justify-content-between shadow-sm" role="alert">
+            <div>
+                <span class="me-2">@(_statusIsError ? "⚠️" : "ℹ️")</span>
+                @_statusMessage
+            </div>
+            <button type="button" class="btn-close" @onclick="() => _statusMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Import / Tool Bar Accordion -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="glass-panel p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-semibold small text-light">📥 Deck-JSON importieren</span>
+                    <span class="badge bg-secondary-subtle text-secondary small">Eigene Decks</span>
+                </div>
+                <InputFile class="form-control form-control-sm" OnChange="OnDeckJsonSelected" accept=".json" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-panel p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-semibold small text-light">⚡ D&amp;D Beyond Charakter importieren</span>
+                    <span class="badge bg-warning text-dark small fw-bold">Auto-Parse</span>
+                </div>
+                <InputFile class="form-control form-control-sm" OnChange="OnDndBeyondJsonSelected" accept=".json" />
+            </div>
         </div>
     </div>
-</div>
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h4 class="mb-0">Kartenliste (@_deck.Cards.Count)</h4>
-    <div>
-        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="AddBlankCard">+ Karte hinzufügen</button>
-        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="DownloadDeckJson">JSON exportieren</button>
-        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="DownloadHtml">HTML erstellen</button>
-        <button class="btn btn-outline-secondary btn-sm me-2" @onclick="GeneratePng" disabled="@_isGenerating">
-            @(_isGenerating ? "Erzeuge…" : "PNG erstellen")
-        </button>
-        <button class="btn btn-primary btn-sm" @onclick="GeneratePdf" disabled="@_isGenerating">
-            @(_isGenerating ? "Erzeuge PDF…" : "PDF erstellen")
-        </button>
-    </div>
-</div>
-
-<table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Typ</th>
-            <th>Kosten</th>
-            <th>Reichweite</th>
-            <th>Effekt</th>
-            <th>Fluff</th>
-            <th>Taktik</th>
-            <th>Tracker</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (var i = 0; i < _deck.Cards.Count; i++)
-        {
-            var card = _deck.Cards[i];
-            <tr>
-                <td><input class="form-control form-control-sm" maxlength="@CardTextLimits.Name" @bind="card.Name" /></td>
-                <td>
-                    <select class="form-select form-select-sm" @bind="card.Type">
-                        @foreach (var color in Enum.GetValues<CardColor>())
-                        {
-                            <option value="@color">@color</option>
-                        }
-                    </select>
-                </td>
-                <td><input class="form-control form-control-sm" maxlength="@CardTextLimits.Cost" @bind="card.Cost" /></td>
-                <td><input class="form-control form-control-sm" maxlength="@CardTextLimits.Range" @bind="card.Range" /></td>
-                <td><textarea class="form-control form-control-sm" rows="2" maxlength="@CardTextLimits.Effect" @bind="card.Effect"></textarea></td>
-                <td><textarea class="form-control form-control-sm" rows="2" maxlength="@CardTextLimits.Fluff" @bind="card.Fluff"></textarea></td>
-                <td><textarea class="form-control form-control-sm" rows="2" maxlength="@CardTextLimits.Tactic" @bind="card.Tactic"></textarea></td>
-                <td style="width:110px">
-                    <input type="number" min="0" class="form-control form-control-sm mb-1"
-                           @bind:get="card.Tracker?.Count ?? 0" @bind:set="v => SetTrackerCount(card, v)" />
-                    <input class="form-control form-control-sm" placeholder="Label" maxlength="@CardTextLimits.TrackerLabel"
-                           @bind:get="card.Tracker?.Label ?? string.Empty" @bind:set="v => SetTrackerLabel(card, v)" />
-                </td>
-                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveCard(card)">✕</button></td>
-            </tr>
-            <tr>
-                <td colspan="9" class="pt-0 pb-3">
-                    <div class="small text-muted mb-1">
-                        Zähler-Zeilen (für Ressourcenkarten mit mehreren Trackern, z.&nbsp;B. Zauberplätze pro Grad):
+    <!-- Main Workspace: Split View (Cards & Live Preview) -->
+    <div class="row g-4">
+        <!-- Card Deck Overview & Details -->
+        <div class="col-lg-8">
+            <div class="glass-panel p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-light">Deck-Titel:</span>
+                        <input class="form-control form-control-sm text-light fw-bold" style="max-width: 250px;" @bind="_deck.Title" />
                     </div>
-                    @if (card.TrackerRows is { Count: > 0 })
-                    {
-                        @for (var r = 0; r < card.TrackerRows.Count; r++)
-                        {
-                            var row = card.TrackerRows[r];
-                            <div class="d-flex gap-2 mb-1" style="max-width:500px">
-                                <input class="form-control form-control-sm" placeholder="Label" maxlength="@CardTextLimits.TrackerLabel" @bind="row.Label" />
-                                <input type="number" min="0" class="form-control form-control-sm" style="width:80px" @bind="row.Count" />
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => card.TrackerRows.Remove(row)">✕</button>
+                    <span class="badge bg-dark border border-secondary text-light">
+                        @_deck.Cards.Count @(_deck.Cards.Count == 1 ? "Karte" : "Karten") im Deck
+                    </span>
+                </div>
+
+                @if (_deck.Cards.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div class="fs-1 mb-2">🃏</div>
+                        <h5>Noch keine Karten vorhanden</h5>
+                        <p class="small mb-3">Füge eine neue Karte hinzu oder importiere ein existierendes Deck.</p>
+                        <button class="btn btn-outline-warning btn-sm" @onclick="AddBlankCard">+ Erste Karte anlegen</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-sm align-middle mb-0" style="background: transparent;">
+                            <thead>
+                                <tr class="text-muted small text-uppercase">
+                                    <th style="width: 40px;">#</th>
+                                    <th>Kartenname</th>
+                                    <th style="width: 110px;">Farbe / Typ</th>
+                                    <th style="width: 100px;">Kosten</th>
+                                    <th style="width: 100px;">Reichweite</th>
+                                    <th style="width: 140px;">Zähler</th>
+                                    <th style="width: 110px;" class="text-end">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < _deck.Cards.Count; i++)
+                                {
+                                    var cardIndex = i;
+                                    var card = _deck.Cards[cardIndex];
+                                    var isSelected = _selectedCard == card;
+                                    <tr class="@(isSelected ? "table-active border-warning" : "")" style="cursor: pointer;" @onclick="() => SelectCard(card)">
+                                        <td class="text-muted small">@(cardIndex + 1)</td>
+                                        <td>
+                                            <div class="fw-semibold @(isSelected ? "text-amber" : "text-light")">
+                                                @(string.IsNullOrWhiteSpace(card.Name) ? "(Unbenannt)" : card.Name)
+                                            </div>
+                                            <div class="small text-muted text-truncate" style="max-width: 220px;">
+                                                @(string.IsNullOrWhiteSpace(card.Effect) ? card.Fluff : card.Effect)
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill @GetBadgeClassForColor(card.Type)">
+                                                @card.Type
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">@(card.Cost ?? "—")</td>
+                                        <td class="small text-muted">@(card.Range ?? "—")</td>
+                                        <td class="small">
+                                            @if (card.Tracker is { Count: > 0 })
+                                            {
+                                                <span class="badge bg-secondary">@card.Tracker.Label: @card.Tracker.Count</span>
+                                            }
+                                            @if (card.TrackerRows is { Count: > 0 })
+                                            {
+                                                <span class="badge bg-dark-subtle text-light ms-1">@card.TrackerRows.Count Reihen</span>
+                                            }
+                                            @if ((card.Tracker is null || card.Tracker.Count <= 0) && (card.TrackerRows is null || card.TrackerRows.Count == 0))
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-end" @onclick:stopPropagation="true">
+                                            <button class="btn btn-sm btn-link text-info p-0 me-2" title="Karte duplizieren" @onclick="() => DuplicateCard(card)">⎘</button>
+                                            <button class="btn btn-sm btn-link text-danger p-0" title="Karte entfernen" @onclick="() => RemoveCard(card)">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Detail Editor for Selected Card -->
+            @if (_selectedCard is not null)
+            {
+                <div class="glass-panel p-4 mb-4 glass-panel-gold">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-amber mb-0">Karte bearbeiten: @(_selectedCard.Name)</h5>
+                        <span class="small text-muted">Änderungen spiegeln sich sofort in der Vorschau wider</span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Kartenname (max. @CardTextLimits.Name Zeichen)</label>
+                            <input class="form-control" maxlength="@CardTextLimits.Name" @bind="_selectedCard.Name" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Rahmen / Typ</label>
+                            <select class="form-select" @bind="_selectedCard.Type">
+                                @foreach (var color in Enum.GetValues<CardColor>())
+                                {
+                                    <option value="@color">@color</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Kosten (max. @CardTextLimits.Cost)</label>
+                            <input class="form-control" placeholder="z. B. 1 Aktion" maxlength="@CardTextLimits.Cost" @bind="_selectedCard.Cost" @bind:event="oninput" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Reichweite / Wirkungsbereich (max. @CardTextLimits.Range)</label>
+                            <input class="form-control" placeholder="z. B. 18 m / 60 ft" maxlength="@CardTextLimits.Range" @bind="_selectedCard.Range" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Hauptzähler / Tracker</label>
+                            <div class="input-group">
+                                <input class="form-control" placeholder="Label (z. B. Pro Tag:)" maxlength="@CardTextLimits.TrackerLabel"
+                                       @bind:get="_selectedCard.Tracker?.Label ?? string.Empty" @bind:set="v => SetTrackerLabel(_selectedCard, v)" />
+                                <input type="number" min="0" max="20" class="form-control" style="max-width: 80px;"
+                                       @bind:get="_selectedCard.Tracker?.Count ?? 0" @bind:set="v => SetTrackerCount(_selectedCard, v)" />
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label small text-muted">Effekt / Beschreibung (max. @CardTextLimits.Effect Zeichen)</label>
+                            <span class="small text-muted">@((_selectedCard.Effect?.Length ?? 0))/@CardTextLimits.Effect</span>
+                        </div>
+                        <textarea class="form-control" rows="3" maxlength="@CardTextLimits.Effect" @bind="_selectedCard.Effect" @bind:event="oninput" placeholder="Regelmechanischer Effekt der Karte..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label small text-muted">Fluff / Zitat (max. @CardTextLimits.Fluff)</label>
+                                <span class="small text-muted">@((_selectedCard.Fluff?.Length ?? 0))/@CardTextLimits.Fluff</span>
+                            </div>
+                            <textarea class="form-control" rows="2" maxlength="@CardTextLimits.Fluff" @bind="_selectedCard.Fluff" @bind:event="oninput" placeholder="Atmosphärischer Flavour-Text..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label small text-muted">Taktik / Wann man es nutzt (max. @CardTextLimits.Tactic)</label>
+                                <span class="small text-muted">@((_selectedCard.Tactic?.Length ?? 0))/@CardTextLimits.Tactic</span>
+                            </div>
+                            <textarea class="form-control" rows="2" maxlength="@CardTextLimits.Tactic" @bind="_selectedCard.Tactic" @bind:event="oninput" placeholder="Kurzer Taktik-Hinweis für den Spieltisch..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Tracker Rows (Optional) -->
+                    <div class="border-top border-secondary pt-3 mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-semibold text-light">Zusätzliche Zähler-Zeilen (z. B. Zauberplätze nach Grad):</span>
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => AddTrackerRow(_selectedCard)">+ Zeile hinzufügen</button>
+                        </div>
+                        @if (_selectedCard.TrackerRows is { Count: > 0 })
+                        {
+                            @for (var r = 0; r < _selectedCard.TrackerRows.Count; r++)
+                            {
+                                var row = _selectedCard.TrackerRows[r];
+                                <div class="d-flex gap-2 mb-2 align-items-center">
+                                    <input class="form-control form-control-sm" placeholder="Label (z. B. Grad 1)" maxlength="@CardTextLimits.TrackerLabel" @bind="row.Label" />
+                                    <input type="number" min="0" max="20" class="form-control form-control-sm" style="width: 80px;" @bind="row.Count" />
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => _selectedCard.TrackerRows.Remove(row)">✕</button>
+                                </div>
+                            }
                         }
-                    }
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => AddTrackerRow(card)">+ Zähler-Zeile</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Live Preview Pane -->
+        <div class="col-lg-4">
+            <div class="glass-panel p-4 position-sticky" style="top: 5rem;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-light mb-0">👁️ Live-Druckvorschau</h5>
+                    <span class="badge bg-secondary small">70 &times; 120 mm</span>
+                </div>
+
+                @if (_selectedCard is not null)
+                {
+                    <div class="d-flex justify-content-center py-2">
+                        <div class="preview-card-frame @GetColorClass(_selectedCard.Type)">
+                            <div class="preview-header">
+                                @(string.IsNullOrWhiteSpace(_selectedCard.Name) ? "Unbenannte Karte" : _selectedCard.Name)
+                            </div>
+                            <div class="preview-body">
+                                @if (!string.IsNullOrWhiteSpace(_selectedCard.Cost))
+                                {
+                                    <div class="preview-stat-row">
+                                        <span class="preview-stat-label">Kosten:</span> @_selectedCard.Cost
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(_selectedCard.Range))
+                                {
+                                    <div class="preview-stat-row">
+                                        <span class="preview-stat-label">Reichweite:</span> @_selectedCard.Range
+                                    </div>
+                                }
+
+                                @if (_selectedCard.Tracker is { Count: > 0 } tr)
+                                {
+                                    <div class="d-flex align-items-center my-2">
+                                        <span class="fw-bold me-2" style="font-size: 0.72rem; color: #555;">@tr.Label</span>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @for (var c = 0; c < tr.Count; c++)
+                                            {
+                                                <div class="preview-circle"></div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(_selectedCard.Effect))
+                                {
+                                    <div class="preview-effect">@_selectedCard.Effect</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(_selectedCard.Fluff))
+                                {
+                                    <div class="preview-fluff">"@_selectedCard.Fluff"</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(_selectedCard.Tactic))
+                                {
+                                    <div class="preview-tactic-title mt-2">Wann man es nutzt:</div>
+                                    <div class="preview-tactic">@_selectedCard.Tactic</div>
+                                }
+
+                                @if (_selectedCard.TrackerRows is { Count: > 0 } rows)
+                                {
+                                    <div class="mt-2 pt-2 border-top">
+                                        @foreach (var row in rows)
+                                        {
+                                            <div class="mb-2 p-1 bg-white rounded shadow-sm">
+                                                <div class="small fw-semibold mb-1" style="font-size: 0.72rem; color: #333;">@row.Label</div>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @for (var rc = 0; rc < row.Count; rc++)
+                                                    {
+                                                        <div class="preview-circle"></div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3 text-muted small">
+                        Druckfertiges Seitenverhältnis mit automatischer Rand- und Schriftgrößenanpassung.
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        Wähle eine Karte aus der Liste aus, um die Live-Vorschau anzuzeigen.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     private CardDeck _deck = new();
+    private CardModel? _selectedCard;
     private bool _isGenerating;
     private string? _statusMessage;
     private bool _statusIsError;
     private readonly string _clientId = Guid.NewGuid().ToString();
 
-    private void AddBlankCard() => _deck.Cards.Add(new CardModel { Name = "Neue Karte" });
+    protected override void OnInitialized()
+    {
+        if (_deck.Cards.Count == 0)
+        {
+            var demoCard = new CardModel
+            {
+                Name = "Feuerball",
+                Type = CardColor.Red,
+                Cost = "1 Aktion",
+                Range = "150 Fuß (20-Fuß Kugel)",
+                Effect = "Jede Kreatur im Radius erleidet 8d6 Feuerschaden (Geschicklichkeitswurf halbiert). Entzündet brennbare Gegenstände.",
+                Fluff = "Ein heller Funke schießt aus deinen Fingerspitzen hervor und detoniert im lodernden Inferno.",
+                Tactic = "Gegen Gruppen eng stehender Feinde auf Distanz einsetzen.",
+                Tracker = new CardTracker { Label = "Zauberplatz Grad 3:", Count = 3 }
+            };
+            _deck.Cards.Add(demoCard);
+            _selectedCard = demoCard;
+        }
+    }
 
-    private void RemoveCard(CardModel card) => _deck.Cards.Remove(card);
+    private void SelectCard(CardModel card)
+    {
+        _selectedCard = card;
+    }
+
+    private void AddBlankCard()
+    {
+        var newCard = new CardModel { Name = "Neue Karte", Type = CardColor.Blue };
+        _deck.Cards.Add(newCard);
+        _selectedCard = newCard;
+    }
+
+    private void DuplicateCard(CardModel card)
+    {
+        var clone = new CardModel
+        {
+            Name = $"{card.Name} (Kopie)",
+            Type = card.Type,
+            Cost = card.Cost,
+            Range = card.Range,
+            Effect = card.Effect,
+            Fluff = card.Fluff,
+            Tactic = card.Tactic,
+            Tracker = card.Tracker is not null ? new CardTracker { Label = card.Tracker.Label, Count = card.Tracker.Count } : null,
+            TrackerRows = card.TrackerRows?.Select(r => new CardTracker { Label = r.Label, Count = r.Count }).ToList()
+        };
+        _deck.Cards.Add(clone);
+        _selectedCard = clone;
+        SetStatus($"Karte '{card.Name}' dupliziert.", false);
+    }
+
+    private void RemoveCard(CardModel card)
+    {
+        _deck.Cards.Remove(card);
+        if (_selectedCard == card)
+        {
+            _selectedCard = _deck.Cards.FirstOrDefault();
+        }
+    }
+
+    private static string GetColorClass(CardColor color) => color.ToString().ToLowerInvariant();
+
+    private static string GetBadgeClassForColor(CardColor color) => color switch
+    {
+        CardColor.Red => "bg-danger",
+        CardColor.Blue => "bg-primary",
+        CardColor.Green => "bg-success",
+        CardColor.Gold => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 
     private static void SetTrackerCount(CardModel card, int count)
     {
@@ -156,7 +452,7 @@
     private static void AddTrackerRow(CardModel card)
     {
         card.TrackerRows ??= [];
-        card.TrackerRows.Add(new CardTracker { Label = "Neue Zeile", Count = 1 });
+        card.TrackerRows.Add(new CardTracker { Label = "Zauberplätze", Count = 2 });
     }
 
     private async Task OnDeckJsonSelected(InputFileChangeEventArgs e)
@@ -170,6 +466,7 @@
             if (deck is not null)
             {
                 _deck = deck;
+                _selectedCard = _deck.Cards.FirstOrDefault();
                 SetStatus($"{deck.Cards.Count} Karten geladen.", false);
             }
         }
@@ -189,6 +486,7 @@
             var imported = DndBeyondImportService.Import(json);
             _deck.Title = imported.Title;
             _deck.Cards.AddRange(imported.Cards);
+            _selectedCard = _deck.Cards.FirstOrDefault();
             SetStatus($"{imported.Cards.Count} Karten aus D&D Beyond importiert. Bitte Texte prüfen und anpassen.", false);
         }
         catch (Exception ex)

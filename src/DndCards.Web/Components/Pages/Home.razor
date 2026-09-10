@@ -1,7 +1,88 @@
-﻿@page "/"
+@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard | TTRPG Card Studio</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container-fluid py-2">
+    <!-- Hero Banner -->
+    <div class="glass-panel p-4 p-md-5 mb-4 position-relative overflow-hidden" style="background: radial-gradient(circle at top right, rgba(218, 165, 32, 0.15), rgba(22, 27, 34, 0.95) 70%); border: 1px solid rgba(218, 165, 32, 0.3);">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-secondary mb-3">
+                    <span class="badge bg-warning text-dark">5e Kompatibel</span>
+                    <span class="small text-muted">Tabletop RPG Karten-Utility</span>
+                </div>
+                <h1 class="display-5 fw-bold text-light mb-3">Druckfertige Karten für deinen Spieltisch</h1>
+                <p class="lead text-muted mb-4">
+                    Erstelle professionelle Zauber-, Aktions- und Referenzkarten für deine TTRPG-Runden.
+                    Nutze flexible Zähler, importiere Daten aus D&amp;D Beyond oder erstelle eigene Homebrew-Sets –
+                    alles druckoptimiert und sofort einsatzbereit.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="cards" class="btn btn-warning px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm">
+                        <span>🃏</span> Zum Kartengenerator
+                    </a>
+                    <button type="button" class="btn btn-outline-light px-4 py-2" data-bs-toggle="modal" data-bs-target="#legalModal">
+                        ⚖️ Lizenz &amp; Kompatibilität
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                <!-- Visual Miniature Card Deck Showcase -->
+                <div class="d-inline-block position-relative p-3">
+                    <div class="preview-card-frame red shadow-lg" style="transform: rotate(3deg); width: 220px; min-height: 330px;">
+                        <div class="preview-header">Feuerball</div>
+                        <div class="preview-body">
+                            <div class="preview-stat-row"><span class="preview-stat-label">Kosten:</span> 1 Aktion</div>
+                            <div class="preview-stat-row"><span class="preview-stat-label">Reichweite:</span> 150 Fuß</div>
+                            <div class="preview-effect">8d6 Feuerschaden in einer 20-Fuß-Kugel. Rettungswurf: Geschicklichkeit halbiert.</div>
+                            <div class="preview-fluff">"Ein helles Aufblitzen, gefolgt von loderndem Inferno."</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <!-- Feature Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="glass-panel p-4 h-100">
+                <div class="fs-1 mb-3">⚡</div>
+                <h4 class="text-light fw-bold">D&amp;D Beyond Import</h4>
+                <p class="text-muted small">
+                    Importiere deinen Charakterbogen direkt via JSON-Export. Alle Zauber, Aktionen und Zauberplatz-Tracker
+                    werden automatisch in bearbeitbare Karten konvertiert.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-panel p-4 h-100">
+                <div class="fs-1 mb-3">🎯</div>
+                <h4 class="text-light fw-bold">Druckoptimiert &amp; Bemaßt</h4>
+                <p class="text-muted small">
+                    Automatische Einhaltung von Textlängen und Standard-Kartengrößen (70x120mm).
+                    Keine überlappenden Texte, saubere Rahmen und direkter PDF- &amp; PNG-Export.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-panel p-4 h-100">
+                <div class="fs-1 mb-3">🪙</div>
+                <h4 class="text-light fw-bold">Ressourcen-Tracker</h4>
+                <p class="text-muted small">
+                    Integrierte Tracker-Reihen für Zauberplätze, Trefferwürfel, Ki-Punkte oder Klassenfähigkeiten.
+                    Perfekt für abwischbare Hüllen oder Markierungen am Tisch.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal & Nominative Fair-Use Notice -->
+    <div class="glass-panel p-3 text-muted small d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span>ℹ️</span>
+            <span>Unabhängiges Software-Dienstprogramm. <strong>5e-kompatibel</strong> gemäß CC-BY-4.0 SRD 5.1 Bestimmungen.</span>
+        </div>
+        <a href="cards" class="text-amber fw-semibold text-decoration-none">Jetzt Karten gestalten &rarr;</a>
+    </div>
+</div>

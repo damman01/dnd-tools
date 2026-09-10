@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <div class="page">
     <div class="sidebar">
@@ -6,18 +6,73 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        <header class="top-row px-4 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-dark-subtle text-light border border-secondary">v1.2</span>
+                <span class="badge bg-gradient-amber text-dark fw-bold">5e Compatible Utility</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#legalModal">
+                    <span>⚖️</span> <span>Rechtliches &amp; Lizenz</span>
+                </button>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <article class="content px-4 py-3">
             @Body
         </article>
+
+        <footer class="app-footer text-center py-3 px-4 text-muted small border-top">
+            <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>&copy; @DateTime.Now.Year <strong>TTRPG Card Studio</strong> &ndash; Ein unabhängiges Formatierungswerkzeug für Spieltische.</span>
+                <span>
+                    <button type="button" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#legalModal">
+                        Rechtliche Hinweise &amp; Disclaimer
+                    </button>
+                </span>
+            </div>
+        </footer>
     </main>
 </div>
 
+<!-- Modal für rechtliche Hinweise & Disclaimer -->
+<div class="modal fade" id="legalModal" tabindex="-1" aria-labelledby="legalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content legal-modal-content text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-light" id="legalModalLabel">⚖️ Rechtliche Hinweise &amp; Kompatibilität</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-toggle="modal" data-bs-target="#legalModal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="fw-bold text-amber">Marken- &amp; Urheberrechtshinweis</h6>
+                <p class="small text-muted mb-3">
+                    <strong>TTRPG Card Studio</strong> ist ein unabhängiges Software-Dienstprogramm. Alle Produktnamen, Logos und Marken sind Eigentum der jeweiligen Inhaber.
+                    Die Verwendung der Begriffe &bdquo;D&amp;D&ldquo; oder &bdquo;5e&ldquo; erfolgt ausschließlich zu nominativen Zwecken zur Beschreibung der Systemkompatibilität
+                    und impliziert keinerlei Zugehörigkeit, Sponsoring oder Billigung durch Wizards of the Coast LLC.
+                </p>
+
+                <h6 class="fw-bold text-amber">Nutzergenerierte Inhalte (UGC)</h6>
+                <p class="small text-muted mb-3">
+                    Dieses Werkzeug dient rein als Formatierungs- und Layout-Prozessor für Texte und Daten, die vom Nutzer selbst eingegeben oder importiert werden.
+                    Nutzer sind selbst dafür verantwortlich sicherzustellen, dass sie über die notwendigen Rechte oder Lizenzen für eingegebene Texte,
+                    Bilder und Homebrew-Inhalte verfügen.
+                </p>
+
+                <h6 class="fw-bold text-amber">System Reference Document (SRD 5.1 / CC-BY-4.0)</h6>
+                <p class="small text-muted mb-0">
+                    Soweit Regelinhalte aus dem offiziellen System Reference Document verwendet werden:
+                    <em>This work includes material taken from the System Reference Document 5.1 (&ldquo;SRD 5.1&rdquo;) by Wizards of the Coast LLC, available at https://dnd.wizards.com/resources/systems-reference-document, under the Creative Commons Attribution 4.0 International License.</em>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#legalModal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Ein unerwarteter Fehler ist aufgetreten.
+    <a href="." class="reload">Neu laden</a>
     <span class="dismiss">🗙</span>
 </div>
