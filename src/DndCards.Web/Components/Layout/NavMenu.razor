@@ -1,8 +1,11 @@
+@inject DndCards.Web.Services.LocalizationService I18n
+@implements IDisposable
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="">
             <span class="brand-icon">⚔️</span>
-            <span class="brand-title">TTRPG Card Studio</span>
+            <span class="brand-title">@I18n.T("app.title")</span>
         </a>
     </div>
 </div>
@@ -13,15 +16,27 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="nav-icon" aria-hidden="true">🏠</span> Dashboard
+                <span class="nav-icon" aria-hidden="true">🏠</span> @I18n.T("nav.dashboard")
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="cards">
-                <span class="nav-icon" aria-hidden="true">🃏</span> Kartengenerator
+                <span class="nav-icon" aria-hidden="true">🃏</span> @I18n.T("nav.generator")
             </NavLink>
         </div>
     </nav>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        I18n.OnLanguageChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        I18n.OnLanguageChanged -= StateHasChanged;
+    }
+}
 

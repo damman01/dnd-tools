@@ -9,12 +9,16 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddHttpClient();
+
 builder.Services.Configure<UsageLimitOptions>(builder.Configuration.GetSection("Monetization"));
 builder.Services.AddSingleton<UsageLimitService>();
 builder.Services.AddSingleton<CardHtmlBuilder>();
 builder.Services.AddSingleton<PdfCardService>();
 builder.Services.AddSingleton<CardImageService>();
 builder.Services.AddSingleton<DndBeyondImportService>();
+builder.Services.AddSingleton<CardTranslationService>();
+builder.Services.AddScoped<LocalizationService>();
 builder.Services.AddScoped<CardDeckStateService>();
 
 var app = builder.Build();

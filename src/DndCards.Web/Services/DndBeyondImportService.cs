@@ -12,7 +12,7 @@ namespace DndCards.Web.Services;
 /// </summary>
 public class DndBeyondImportService
 {
-    public CardDeck Import(string json)
+    public CardDeck Import(string json, UnitSystem unitSystem = UnitSystem.Metric)
     {
         var root = JsonNode.Parse(json) ?? throw new InvalidOperationException("Ungültiges JSON.");
         var data = root["data"] ?? root;
@@ -24,8 +24,8 @@ public class DndBeyondImportService
 
         var proficiencyBonus = CalculateProficiencyBonus(data);
 
-        deck.Cards.AddRange(ImportSpells(data));
-        deck.Cards.AddRange(ImportActions(data, proficiencyBonus));
+        deck.Cards.AddRange(ImportSpells(data, unitSystem));
+        deck.Cards.AddRange(ImportActions(data, proficiencyBonus, unitSystem));
 
         var resourceCard = BuildSpellSlotResourceCard(data);
         if (resourceCard is not null)
@@ -36,7 +36,7 @@ public class DndBeyondImportService
         return deck;
     }
 
-    private static IEnumerable<CardModel> ImportSpells(JsonNode data)
+    private static IEnumerable<CardModel> ImportSpells(JsonNode data, UnitSystem unitSystem)
     {
         var seenIds = new HashSet<string>();
 
@@ -58,7 +58,7 @@ public class DndBeyondImportService
 
             var level = definition["level"]?.GetValue<int>() ?? 0;
             var cost = BuildCostText(definition["activation"] ?? spellEntry["activation"]);
-            var range = BuildSpellRangeText(definition["range"]);
+            var range = BuildSpellRangeText(definition["range"], unitSystem);
             var description = StripHtml(definition["description"]?.ToString() ?? "");
             var hasDamage = definition["requiresAttackRoll"]?.GetValue<bool>() == true
                 || description.Contains("damage", StringComparison.OrdinalIgnoreCase)
@@ -160,7 +160,7 @@ public class DndBeyondImportService
         };
     }
 
-    private static IEnumerable<CardModel> ImportActions(JsonNode data, int proficiencyBonus)
+    private static IEnumerable<CardModel> ImportActions(JsonNode data, int proficiencyBonus, UnitSystem unitSystem)
     {
         if (data["actions"] is not JsonObject actionGroups)
         {
@@ -181,7 +181,7 @@ public class DndBeyondImportService
 
                 var description = StripHtml(action["description"]?.ToString() ?? action["snippet"]?.ToString() ?? "");
                 var cost = BuildCostText(action["activation"]);
-                var range = BuildActionRangeText(action["range"]);
+                var range = BuildActionRangeText(action["range"], unitSystem);
                 var tracker = BuildActionTracker(action["limitedUse"], proficiencyBonus);
 
                 var hasAttack = action["displayAsAttack"]?.GetValue<bool>() == true
@@ -251,7 +251,7 @@ public class DndBeyondImportService
             _ => "Spezial"
         };
 
-    private static string BuildSpellRangeText(JsonNode? range)
+    private static string BuildSpellRangeText(JsonNode? range, UnitSystem unitSystem = UnitSystem.Metric)
     {
         if (range is null) return "Selbst";
         var origin = range["origin"]?.ToString() ?? "";
@@ -261,22 +261,33 @@ public class DndBeyondImportService
         {
             "Self" => "Du selbst",
             "Touch" => "Berührung",
-            _ when feet > 0 => FeetToMeters(feet),
+            _ when feet > 0 => FormatRangeDistance(feet, unitSystem),
             _ => origin
         };
     }
 
-    private static string? BuildActionRangeText(JsonNode? range)
+    private static string? BuildActionRangeText(JsonNode? range, UnitSystem unitSystem = UnitSystem.Metric)
     {
         var feet = range?["range"]?.GetValue<int>() ?? 0;
-        return feet > 0 ? FeetToMeters(feet) : null;
+        return feet > 0 ? FormatRangeDistance(feet, unitSystem) : null;
     }
 
     // Official German D&D translations convert 1 foot to 0.3 meters (5 ft square = 1.5 m).
-    private static string FeetToMeters(int feet)
+    private static string FormatRangeDistance(int feet, UnitSystem unitSystem)
     {
+        if (unitSystem == UnitSystem.Imperial)
+        {
+            return $"{feet} ft";
+        }
         var meters = feet * 0.3;
-        return $"{meters:0.#} Meter".Replace(".", ",");
+        var meterStr = $"{meters:0.#} m".Replace(".", ",");
+
+        if (unitSystem == UnitSystem.Both)
+        {
+            return $"{meterStr} ({feet} ft)";
+        }
+
+        return meterStr;
     }
 
     private static string StripHtml(string html) =>
