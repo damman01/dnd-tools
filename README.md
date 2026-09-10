@@ -22,13 +22,15 @@ hosted as a small paid service.
 
 Key building blocks inside `DndCards.Web`:
 
-- `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, JSON-serializable, plus `CardTextLimits` (per-field character caps so a card's content always fits one printed page).
-- `Services/CardHtmlBuilder.cs` – renders a deck into printable HTML/CSS (only fields that are actually filled in are shown on a card).
+- `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, JSON-serializable, plus `CardTextLimits` (per-field character caps) and dynamic `EffectiveEffectLimit` (auto-adapting up to 450 characters if fluff/tactic are omitted, or explicitly configurable per card via `custom_effect_limit`).
+- `Services/CardHtmlBuilder.cs` – renders a deck into printable HTML/CSS (applies `.effect.expanded` styling for larger effect blocks, only fields that are actually filled in are shown on a card).
+- `Services/LocalizationService.cs` – multi-language support (`de` and `en`) and unit system settings (Metric, Imperial, or Both) across the application.
+- `Services/TranslationService.cs` – automatic card/deck translation between German and English, integrating with the public [dnddeutsch.de API (D3)](https://www.dnddeutsch.de/api/) for canonical official 5e spell/rule translations and bidirectional unit conversions (`m` ⇄ `ft`).
 - `Services/PdfCardService.cs` – turns that HTML into a PDF via [PeachPDF](https://peachpdf.net/) (pure .NET, no headless browser or wkhtmltopdf dependency).
 - `Services/CardImageService.cs` – rasterizes the generated PDF to PNG via [PDFtoImage](https://github.com/sungaila/PDFtoImage)/PDFium (single PNG for a one-card deck, a ZIP of PNGs otherwise).
-- `Services/DndBeyondImportService.cs` – maps an uploaded D&D Beyond character JSON export (spells/actions, character-service v5 shape) into cards.
+- `Services/DndBeyondImportService.cs` – maps an uploaded D&D Beyond character JSON export into cards, separating spell slots (only for spellcasters) and class resources (e.g. Rage, Second Wind, Action Surge) into dedicated resource cards.
 - `Services/UsageLimitService.cs` – free-tier usage gate scaffold for a future paid tier (not wired to a payment provider yet, see [Monetization](#monetization)).
-- `Components/Pages/Cards.razor` – the `/cards` UI: manual card editor, deck JSON upload/download, and JSON/HTML/PNG/PDF export.
+- `Components/Pages/Cards.razor` – the `/cards` UI: manual card editor with dynamic text block size controls, live print preview, translation & unit conversion actions, deck JSON upload/download, and JSON/HTML/PNG/PDF export.
 
 ## Getting started
 
@@ -96,11 +98,9 @@ Only fields that are present end up on the printed card.
   `https://character-service.dndbeyond.com/character/v5/character/{id}` (the
   unofficial character-service v5 shape) via the "D&D Beyond Charakter
   importieren" upload. `DndBeyondImportService` maps spells and actions from
-  that response to cards, plus a trailing "Ressourcen & Zauber" gold card with
-  the character's total spell slots per level (from each class's
-  `spellRules.levelSpellSlots` table - exact for single-class characters,
-  a best-effort sum for multiclass casters); field names were verified
-  against a real export.
+  that response to cards, plus trailing gold resource cards:
+  - "Zauberplätze" with the character's total spell slots per level (only if the class or subclass can actually cast spells).
+  - "Klassenressourcen" with all limited-use martial abilities (e.g. Barbarian Rage, Fighter Action Surge/Second Wind, Monk Ki points, resetting on short or long rests).
   The app never calls this API itself — it is undocumented/unofficial and
   could change or break at any time, so fetching it server-side was
   deliberately not implemented. Users who want this can retrieve the JSON
