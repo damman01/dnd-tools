@@ -1,6 +1,6 @@
-# DnD Tools – Action & Spell Card Generator
+# CardStudio – TTRPG Action & Spell Card Generator
 
-A self-hostable tool that turns D&D character abilities into small, printable
+A self-hostable tool that turns tabletop RPG character abilities into small, printable
 reference cards (70×120 mm by default) as a PDF. Card content itself can be
 authored in any language (the bundled UI defaults to German cards), but the
 codebase, commits, issues, and docs are kept in English.
@@ -9,28 +9,34 @@ codebase, commits, issues, and docs are kept in English.
 
 Actively evolving prototype. The original idea started as a Jupyter notebook
 ([DnD_Action_and_Spell_Card_Generator.ipynb](DnD_Action_and_Spell_Card_Generator.ipynb))
-and is being rebuilt as a containerizable .NET web app so it can eventually be
-hosted as a small paid service.
+and has been modernized into a clean, cloud-native distributed .NET app orchestrated by Aspire.
 
 ## Architecture
 
 | Project | Purpose |
 |---|---|
-| [DndTools.AppHost](DndTools.AppHost/) | [.NET Aspire](https://learn.microsoft.com/dotnet/aspire/) orchestration for local development |
-| [src/DndCards.Web](src/DndCards.Web/) | Blazor Web App (interactive server) – the actual product: card editor + PDF export |
-| [src/DndTools.ServiceDefaults](src/DndTools.ServiceDefaults/) | Shared OpenTelemetry / health-check / resilience defaults |
+| [CardStudio.AppHost](CardStudio.AppHost/) | [.NET Aspire](https://learn.microsoft.com/dotnet/aspire/) orchestration for local development and container deployments |
+| [src/CardStudio.Shared](src/CardStudio.Shared/) | Shared domain models (`CardModel`, `CardDeck`, `CardTextLimits`) and API contracts/DTOs |
+| [src/CardStudio.Api](src/CardStudio.Api/) | ASP.NET Core Minimal Web API – modular backend microservice for rendering (PDF/PNG), translation, D&D Beyond import, and monetization quotas |
+| [src/CardStudio.Web](src/CardStudio.Web/) | Blazor Web App (interactive server) – the user-facing UI: card editor, live preview, and client for the API |
+| [src/CardStudio.ServiceDefaults](src/CardStudio.ServiceDefaults/) | Shared OpenTelemetry / health-check / resilience defaults |
 
-Key building blocks inside `DndCards.Web`:
+### Key building blocks:
 
-- `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, JSON-serializable, plus `CardTextLimits` (per-field character caps) and dynamic `EffectiveEffectLimit` (auto-adapting up to 450 characters if fluff/tactic are omitted, or explicitly configurable per card via `custom_effect_limit`).
-- `Services/CardHtmlBuilder.cs` – renders a deck into printable HTML/CSS (applies `.effect.expanded` styling for larger effect blocks, only fields that are actually filled in are shown on a card).
-- `Services/LocalizationService.cs` – multi-language support (`de` and `en`) and unit system settings (Metric, Imperial, or Both) across the application.
-- `Services/TranslationService.cs` – automatic card/deck translation between German and English, integrating with the public [dnddeutsch.de API (D3)](https://www.dnddeutsch.de/api/) for canonical official 5e spell/rule translations and bidirectional unit conversions (`m` ⇄ `ft`).
-- `Services/PdfCardService.cs` – turns that HTML into a PDF via [PeachPDF](https://peachpdf.net/) (pure .NET, no headless browser or wkhtmltopdf dependency).
-- `Services/CardImageService.cs` – rasterizes the generated PDF to PNG via [PDFtoImage](https://github.com/sungaila/PDFtoImage)/PDFium (single PNG for a one-card deck, a ZIP of PNGs otherwise).
-- `Services/DndBeyondImportService.cs` – maps an uploaded D&D Beyond character JSON export into cards, separating spell slots (only for spellcasters) and class resources (e.g. Rage, Second Wind, Action Surge) into dedicated resource cards.
-- `Services/UsageLimitService.cs` – free-tier usage gate scaffold for a future paid tier (not wired to a payment provider yet, see [Monetization](#monetization)).
-- `Components/Pages/Cards.razor` – the `/cards` UI: manual card editor with dynamic text block size controls, live print preview, translation & unit conversion actions, deck JSON upload/download, and JSON/HTML/PNG/PDF export.
+- **`CardStudio.Shared`**:
+  - `Models/CardModel.cs` – `CardDeck` / `CardModel` / `CardTracker` data model, plus `CardTextLimits` and dynamic `EffectiveEffectLimit`.
+  - `Contracts/ApiContracts.cs` – DTOs for typed API communication (`RenderPdfRequest`, `RenderPngRequest`, `TranslateDeckRequest`, `UsageQuotaDto`).
+
+- **`CardStudio.Api`** (Backend Service):
+  - `Modules/Rendering/` – `CardHtmlBuilder`, `PdfCardService` ([PeachPDF](https://peachpdf.net/)), `CardImageService` ([PDFtoImage](https://github.com/sungaila/PDFtoImage)/PDFium).
+  - `Modules/Translation/` – `ITranslationProvider`, `D3TranslationProvider` integrating with [dnddeutsch.de API (D3)](https://www.dnddeutsch.de/api/) and unit conversions.
+  - `Modules/Import/` – `DndBeyondImportService` mapping character JSON to cards.
+  - `Modules/Monetization/` – `IQuotaService`, `UsageLimitService` enforcing card counts and generation limits.
+  - `Extensions/EndpointRouteBuilderExtensions.cs` – versioned REST endpoints (`/api/v1/render/pdf`, `/api/v1/render/png`, `/api/v1/translate/*`, `/api/v1/billing/*`).
+
+- **`CardStudio.Web`** (Frontend Service):
+  - `Services/CardApiClient.cs` – typed HttpClient communicating with `https+http://api` via Aspire service discovery.
+  - `Components/Pages/Cards.razor` – card editor with size pills, live print preview, and export triggers.
 
 ## Getting started
 
@@ -120,27 +126,29 @@ real payment provider (e.g. Stripe) is intentionally deferred — see open issue
 
 The two limits are exposed as Aspire parameters (`monetization-free-card-limit`,
 `monetization-free-generations-per-day`, defaults 8 and 5) in
-[DndTools.AppHost/AppHost.cs](DndTools.AppHost/AppHost.cs), passed to the `web`
-resource as `Monetization__FreeCardLimitPerDeck` / `Monetization__FreeGenerationsPerDay`
+[CardStudio.AppHost/AppHost.cs](CardStudio.AppHost/AppHost.cs), passed to the `web` and `api`
+resources as `Monetization__FreeCardLimitPerDeck` / `Monetization__FreeGenerationsPerDay`
 environment variables. Override them without touching code, e.g. via the
 AppHost's user secrets:
 
 ```powershell
-dotnet user-secrets set "Parameters:monetization-free-card-limit" 20 --project DndTools.AppHost
+dotnet user-secrets set "Parameters:monetization-free-card-limit" 20 --project CardStudio.AppHost
 ```
 
-Running `DndCards.Web` outside Aspire (e.g. plain `docker run`) falls back to
-the defaults in its own `appsettings.json` under `Monetization`.
+Running `CardStudio.Web` or `CardStudio.Api` outside Aspire (e.g. plain `docker run`) falls back to
+the defaults in their own `appsettings.json` under `Monetization`.
 
 ## Container hosting
 
-A production [Dockerfile](src/DndCards.Web/Dockerfile) is provided for
-`DndCards.Web` (multi-stage build on `mcr.microsoft.com/dotnet/aspnet:10.0`,
-listens on port 8080).
+Production Dockerfiles are provided for both services:
+- `src/CardStudio.Api/Dockerfile` (Backend Web API)
+- `src/CardStudio.Web/Dockerfile` (Frontend Blazor UI)
+
+Build and run locally:
 
 ```powershell
-docker build -f src/DndCards.Web/Dockerfile -t dndcards-web .
-docker run -p 8080:8080 dndcards-web
+docker build -f src/CardStudio.Api/Dockerfile -t cardstudio-api .
+docker build -f src/CardStudio.Web/Dockerfile -t cardstudio-web .
 ```
 
 ## Contributing

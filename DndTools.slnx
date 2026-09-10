@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/DndCards.Web/DndCards.Web.csproj" />
-    <Project Path="src/DndTools.ServiceDefaults/DndTools.ServiceDefaults.csproj" />
-  </Folder>
-  <Project Path="DndTools.AppHost/DndTools.AppHost.csproj" />
-</Solution>

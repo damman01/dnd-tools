@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CardStudio.Shared/CardStudio.Shared.csproj" />
+    <Project Path="src/CardStudio.Api/CardStudio.Api.csproj" />
+    <Project Path="src/CardStudio.Web/CardStudio.Web.csproj" />
+    <Project Path="src/CardStudio.ServiceDefaults/CardStudio.ServiceDefaults.csproj" />
+  </Folder>
+  <Project Path="CardStudio.AppHost/CardStudio.AppHost.csproj" />
+</Solution>

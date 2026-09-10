@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\CardStudio.Api\CardStudio.Api.csproj" />
+    <ProjectReference Include="..\src\CardStudio.Web\CardStudio.Web.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>a9a34964-b8d0-4455-a015-1dfc20c6eb89</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
